@@ -1,0 +1,10 @@
+{
+  "presets": [
+    ["env", {
+      "targets": {
+        "browser": "latest version",
+        "node": "current"
+      }
+    }]
+  ]
+}

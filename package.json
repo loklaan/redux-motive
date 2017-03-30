@@ -1,0 +1,29 @@
+{
+  "name": "redux-motive",
+  "version": "0.0.1",
+  "description": "Simplify writing action creators, reducers and effects - without breaking redux.",
+  "main": "dist/index.js",
+  "module": "src/index.js",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "build": "cd src && babel *.js -d ../dist",
+    "test": "jest --watchAll",
+    "test:once": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "babel-cli": "^6.24.0"
+  },
+  "devDependencies": {
+    "babel-preset-env": "^1.2.2",
+    "jest": "^19.0.2",
+    "jest-babel": "^1.0.1",
+    "redux": "^3.6.0",
+    "redux-thunk": "^2.2.0"
+  },
+  "author": "Lochlan Bunn <bunn@lochlan.io>",
+  "license": "MIT",
+  "repository": "https://github.com/loklaan/redux-motive"
+}

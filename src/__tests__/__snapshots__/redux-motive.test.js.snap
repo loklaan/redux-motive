@@ -1,0 +1,56 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ReduxMotive constructor should construct empty intent 1`] = `Object {}`;
+
+exports[`ReduxMotive constructor should construct empty intent 2`] = `[Function]`;
+
+exports[`ReduxMotive intents should work with single async intent 1`] = `Object {}`;
+
+exports[`ReduxMotive intents should work with single async intent 2`] = `
+Object {
+  "loading": true,
+}
+`;
+
+exports[`ReduxMotive intents should work with single async intent 3`] = `
+Object {
+  "loading": false,
+  "rainDepth": 10,
+}
+`;
+
+exports[`ReduxMotive intents should work with single sync intent 1`] = `
+Object {
+  "rainDepth": 10,
+}
+`;
+
+exports[`ReduxMotive should work with single async intent that throws 1`] = `Object {}`;
+
+exports[`ReduxMotive should work with single async intent that throws 2`] = `
+Object {
+  "loading": true,
+}
+`;
+
+exports[`ReduxMotive should work with single async intent that throws 3`] = `
+Object {
+  "error": [Error: foo],
+  "loading": false,
+}
+`;
+
+exports[`ReduxMotive should work with single async intent with configured handlers 1`] = `Object {}`;
+
+exports[`ReduxMotive should work with single async intent with configured handlers 2`] = `
+Object {
+  "isSubmerged": true,
+}
+`;
+
+exports[`ReduxMotive should work with single async intent with configured handlers 3`] = `
+Object {
+  "isSubmerged": false,
+  "rainDepth": 10,
+}
+`;
