@@ -1,5 +1,9 @@
 # Redux Motive
 
+![size](https://img.shields.io/badge/size-2.3kb-green.svg)
+![dependencies](https://img.shields.io/badge/dependencies-0-green.svg)
+![experimental](https://img.shields.io/badge/status-%20%20%20%20%20%20%20%20%20%20%20%20%20experimental-red.svg)
+
 Simplify writing action creators, reducers and effects - without breaking redux.
 
 ```js
