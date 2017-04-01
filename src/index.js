@@ -1,5 +1,6 @@
 const isAsyncFunc = require('./is-async-function');
 
+const PROGRESS_STATE_PROP = 'progressing';
 const INTENT_PREFIX = '@@INTENT';
 const META_INTENT_ASYNC = '@@intentasync';
 const META_INTENT_ARGS = '@@intentargs';
@@ -11,16 +12,16 @@ const HANDLER_SUFFIXES = {
 }
 const DEFAULT_HANDLERS = {
   start (state) {
-    return Object.assign({}, state, { loading: true });
+    return Object.assign({}, state, { [PROGRESS_STATE_PROP]: true });
   },
   end (intentState) {
-    return Object.assign({}, intentState, { loading: false });
+    return Object.assign({}, intentState, { [PROGRESS_STATE_PROP]: false });
   },
   error (state, error) {
     return Object.assign(
       {},
       state,
-      { loading: false, error }
+      { [PROGRESS_STATE_PROP]: false, error }
     );
   },
 }

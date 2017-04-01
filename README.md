@@ -1,116 +1,132 @@
 # Redux Motive
 
-Redux util for encapsulating action creators and reducers, with async conveniences.
+Simplify writing action creators, reducers and effects - without breaking redux.
 
 ```js
-// weather.js
-import ReduxMotive from 'redux-motive'
-
-export default ReduxMotive({
-  // Initial state, motive name & default handlers
-  config: {
-    state: {
-      loading: false,
-      error: null,
-      location: null,
-      today: null,
-      tomorrow: null,
-      weatherWarnings: null,
-      warningsLoading: false,
-      warningsError: null,
-      showWeatherWarnings: true
-    },
-    prefix: 'weather',
-    handlers: {
-      start: (state) => ({ ...state, loading: true }),
-      end: (intentState) => ({ ...intentState, loading: true }),
-      error: (state) => ({ ...state, error: error, loading: false }),
-    }
+const { reducer, ...actionCreators } = ReduxMotive({
+  addTodo (state, todo) {
+    return [ ...state, todo ]
   },
 
+  async createTodo (motive, text, isDone) {
+    const todo = await api('/todo', {text, isDone})
+    return state => motive.addTodo(todo)
+  }
+})
+```
 
-  // Intents
-  // These will be converted into Action Creators and a single Reducer.
+## Preamble
 
-  // Synchronous Intent - immediately return a new state tree.
-  hideWarnings (state) {
-    return {
-      ...state,
-      showWarnings: false
-    }
-  },
+In UI development, our **motive**'s for using redux are predictable.
 
-  // Asynchronous Intent - eventually return a new state tree via a final thunk.
-  // An async Intent has three internal intents firing off during the lifecycle
-  // of the promises. They are defined in the model, or overridden intent.
-  async fetchForecasts (motive, lat, lng) {
-    motive.fetchWarnings();
-    const todaysCast = await forecastApi(lat, lng)
-    const tomorrowsCast = await forecastApi(lat, lng)
+1. Reduce an Action to change the state _now_, to rerender the UI _soon_.
+2. Reduce the lifecycle of side effects, from an Action, to change state _over time_, to rerender the UI as the _effects progress_.
 
-    return state => ({
-      ...state,
-      today: todaysCast,
-      tomorrow: tomorrowsCast
-    })
-  },
+In both cases, we carry **intent** to change the state from the moment an Action is dispatched. Redux is great for splitting data-flow concerns into small concepts, but it can introduce indirection over our intent, and at times this becomes the source of errors.
 
-  // Asynchronous Intent with overridden handlers.
-  fetchWarnings: {
-    intent: async function fetchWarnings (motive, lat, lng) {
-      const weatherWarnings = await warningsApi(lat, lng)
+## Ok so
 
-      return state => {
-        const hasChanged = state.weatherWarnings !== weatherWarnings
-        return !hasChanged ? state : {
-          ...state,
-          weatherWarnings,
-          showWarnings: true
-        }
-      }
-    },
-    handlers: {
-      start: (state) => ({ ...state, warningsLoading: true }),
-      end: (intentState) => ({ ...intentState, warningsLoading: false }),
-      error: (state, error) =>
-        ({ ...state, warningsError: error, warningsLoading: false }),
-    }
+**With Motive, we write our intents as single functions, to then generate Action Creators and a Reducer.**
+
+```js
+function concatToTodos (todo, state) {
+  return Object.assign({}, state, {
+    todos: state.todos.concat(todo)
+  })
+}
+
+const { reducer, ...actionCreators } = ReduxMotive({
+  addTodo (state, text) {
+    const newTodo = { text, done: false }
+    return concatToTodos(newTodo, state)
   }
 })
 
-// store.js
-import { createStore, applyMiddleware } from 'redux'
-import thunk from 'redux-thunk'
-import weatherMotive from './weather'
+const store = createStore(reducer, applyMiddleware(thunk))
+store.subscribe((action) => console.log(
+  action.type,
+  store.getState()
+))
 
-const store = createStore(
-  weatherMotive.reducer,
-  applyMiddleware(thunk)
+store.dispatch(
+  actionCreators.addTodo('Cook dinner')
 )
 
-store.dispatch(weatherMotive.hideWarnings())
-store.dispatch(weatherMotive.fetchForecasts(42, 42))
+// '@@INTENT/ADD_TODO'
+// {
+//   todos: { text: 'Cook dinner', done: false }
+// }
 ```
 
-## Huh?
+---
 
-Motive is an abstraction of Redux action creators and reducers, comprised of
-data-flow functions called Intents.
+**Motive reduces the state during the lifecycle of async functions, in three potential steps; start, end, error.**
 
-An 'Intent' fulfills the roles of an action creator and a reducer; it is
-a pattern to encapsulate concerns of both into a single function that
-takes free-form parameters to return a new state tree.
 
-Async intents are given further utility, by wrapping their invocation
-lifecycle with start, end, and error handlers. These can be easily overridden
-to suit the state shape of the Motive.
+```js
+//...
+  async createTodo (state, text) {
+    const todo = await api('/todo', {text})
+    return state => {
+      return concatToTodos(todo)
+    }
+  }
+//...
 
-A Motive will generate an object comprised of action creators, with the name
-of intents, and a function named reducer.
+store.dispatch(
+  actionCreators.createTodo('Cook dinner')
+)
 
-Async Intents use redux-thunk, making it a required middleware in the same
-redux store configured with a Motive's reducer.
+// '@@INTENT/CREATE_TODO_START'
+// {
+//   progressing: true
+// }
+
+//...
+
+// '@@INTENT/CREATE_TODO_END'
+// {
+//   progressing: false,
+//   todos: { text: 'Cook dinner', done: false }
+// }
+
+//... (or if the api request failed)
+
+// '@@INTENT/CREATE_TODO_ERROR'
+// {
+//   progressing: false,
+//   error: Error
+// }
+```
+
+## Install
+
+Get started by installing Motive, and it's requirement `redux-thunk`.
+
+```shell
+npm install --save redux-motive redux-thunk
+# yarn add redux-motive redux-thunk
+```
+
+Add the `redux-thunk` middleware to your store. _See [`redux-thunk` docs][redux-thunk] for more details._
+
+```js
+import { createStore, applyMiddleware } from 'redux'
+import thunk from 'redux-thunk'
+import reducer from './reducers/index';
+
+const store = createStore(
+  reducer,
+  applyMiddleware(thunk)
+)
+```
+
+## API
+
+// TODO
 
 ## License
 
-MIT
+Licensed under the MIT License, Copyright © 2017 Lochlan Bunn.
+
+[redux-thunk]: https://github.com/gaearon/redux-thunk

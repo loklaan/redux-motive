@@ -8,13 +8,13 @@ exports[`ReduxMotive intents should work with single async intent 1`] = `Object 
 
 exports[`ReduxMotive intents should work with single async intent 2`] = `
 Object {
-  "loading": true,
+  "progressing": true,
 }
 `;
 
 exports[`ReduxMotive intents should work with single async intent 3`] = `
 Object {
-  "loading": false,
+  "progressing": false,
   "rainDepth": 10,
 }
 `;
@@ -29,14 +29,14 @@ exports[`ReduxMotive should work with single async intent that throws 1`] = `Obj
 
 exports[`ReduxMotive should work with single async intent that throws 2`] = `
 Object {
-  "loading": true,
+  "progressing": true,
 }
 `;
 
 exports[`ReduxMotive should work with single async intent that throws 3`] = `
 Object {
   "error": [Error: foo],
-  "loading": false,
+  "progressing": false,
 }
 `;
 
