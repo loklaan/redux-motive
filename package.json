@@ -9,6 +9,7 @@
     "src"
   ],
   "scripts": {
+    "prepublish": "npm run build",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "build": "cd src && babel *.js -d ../dist",
