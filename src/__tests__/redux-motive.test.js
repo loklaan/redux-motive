@@ -187,5 +187,97 @@ describe('ReduxMotive', () => {
       expect(store.getState()).toMatchSnapshot();
       store.dispatch(motive.intent());
     });
+
+    it('should be ok when async intent returns nothing', (done) => {
+      let store = null;
+      const motive = ReduxMotive({
+        config: {
+          prefix: 'test',
+          initialState: {}
+        },
+
+        async intent (motive) {}
+      });
+
+      store = createStore(
+        motive.reducer,
+        applyMiddleware(thunk)
+      );
+
+      expect(store.getState()).toMatchSnapshot();
+      store.dispatch(motive.intent());
+      setTimeout(() => {
+        if (store.getState().error) {
+          done.fail(store.getState().error);
+        } else {
+          expect(store.getState().progressing).toBe(false);
+          done();
+        }
+      }, 0);
+    });
+
+    it('should be ok if an expanded async intent only defines "intent" prop', (done) => {
+      let store = null;
+      const motive = ReduxMotive({
+        config: {
+          prefix: 'test',
+          initialState: {}
+        },
+
+        intent: {
+          async intent (motive) {}
+        }
+      });
+
+      store = createStore(
+        motive.reducer,
+        applyMiddleware(thunk)
+      );
+
+      expect(store.getState()).toMatchSnapshot();
+      store.dispatch(motive.intent());
+      setTimeout(() => {
+        if (store.getState().error) {
+          done.fail(store.getState().error);
+        } else {
+          expect(store.getState().progressing).toBe(false);
+          done();
+        }
+      }, 0);
+    });
+
+    it('should dispatch an bound motive action creator in an async intent', (done) => {
+      let store = null;
+      const motive = ReduxMotive({
+        config: {
+          prefix: 'test',
+          initialState: {}
+        },
+
+        async intentA (motive) {
+          motive.intentB()
+        },
+        async intentB () {
+          done()
+        }
+      });
+
+      store = createStore(
+        motive.reducer,
+        applyMiddleware(thunk)
+      );
+
+      expect(store.getState()).toMatchSnapshot();
+      store.dispatch(motive.intentA());
+      setTimeout(() => {
+        if (store.getState().error) {
+          done.fail(store.getState().error);
+        } else {
+          expect(store.getState().progressing).toBe(false);
+          done();
+        }
+      }, 0);
+    });
+
   });
 });

@@ -4,6 +4,12 @@ exports[`ReduxMotive constructor should construct empty intent 1`] = `Object {}`
 
 exports[`ReduxMotive constructor should construct empty intent 2`] = `[Function]`;
 
+exports[`ReduxMotive intents should be ok if an expanded async intent only defines "intent" prop 1`] = `Object {}`;
+
+exports[`ReduxMotive intents should be ok when async intent returns nothing 1`] = `Object {}`;
+
+exports[`ReduxMotive intents should dispatch an bound motive action creator in an async intent 1`] = `Object {}`;
+
 exports[`ReduxMotive intents should have a bound motive in async intent 1`] = `Object {}`;
 
 exports[`ReduxMotive intents should work with single async intent 1`] = `Object {}`;

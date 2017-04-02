@@ -97,7 +97,9 @@ function ReduxMotive (configuration) {
         const boundMotive = memoizedBoundMotives(motive, dispatch, getState)
         intent(boundMotive, ...args)
           .then(reducer => {
-            const intentState = reducer(getState());
+            const intentState = typeof reducer === 'function'
+              ? reducer(getState())
+              : {};
             dispatch(createAsyncAction(TYPE_END, undefined, {
               [META_INTENT_STATE]: intentState,
               [META_INTENT_ARGS]: args
@@ -116,20 +118,20 @@ function ReduxMotive (configuration) {
       reducers[TYPE_START] = (state, action) => {
         return intentsHandlers.start(
           state,
-          ...(action.meta[META_INTENT_ARGS] || [])
+          ...(action.meta[META_INTENT_ARGS])
         );
       }
       reducers[TYPE_END] = (state, action) => {
         return intentsHandlers.end(
           action.meta[META_INTENT_STATE],
-          ...(action.meta[META_INTENT_ARGS] || [])
+          ...(action.meta[META_INTENT_ARGS])
         );
       }
       reducers[TYPE_ERROR] = (state, action) => {
         return intentsHandlers.error(
           state,
           action.payload,
-          ...(action.meta[META_INTENT_ARGS] || [])
+          ...(action.meta[META_INTENT_ARGS])
         );
       }
     }
@@ -172,7 +174,7 @@ function createAction (type, payload, meta) {
 
 function createAsyncAction (...args) {
   const action = createAction(...args);
-  action.meta = action.meta || {};
+  action.meta = action.meta;
   action.meta[META_INTENT_ASYNC] = true;
   return action;
 }
@@ -199,7 +201,7 @@ function bindDispatchToMotive (motive, dispatch, getState) {
   Object.defineProperty(bound, 'getState', { value: getState });
   return Object.keys(motive).reduce((bound, name) => {
     const intent = motive[name].intent || motive[name];
-    bound[name] = bindDispatchToIntent(intent);
+    bound[name] = bindDispatchToIntent(intent, dispatch);
     return bound;
   }, bound);
 }
