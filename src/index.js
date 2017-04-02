@@ -99,7 +99,7 @@ function ReduxMotive (configuration) {
           .then(reducer => {
             const intentState = typeof reducer === 'function'
               ? reducer(getState())
-              : {};
+              : getState();
             dispatch(createAsyncAction(TYPE_END, undefined, {
               [META_INTENT_STATE]: intentState,
               [META_INTENT_ARGS]: args
@@ -163,7 +163,7 @@ function intentPrefix (name) {
   return `${INTENT_PREFIX}${name ? '/' : ''}${snakeCase(name)}`;
 }
 
-function createAction (type, payload, meta) {
+function createAction (type, payload, meta = {}) {
   return {
     type,
     payload,
@@ -174,7 +174,6 @@ function createAction (type, payload, meta) {
 
 function createAsyncAction (...args) {
   const action = createAction(...args);
-  action.meta = action.meta;
   action.meta[META_INTENT_ASYNC] = true;
   return action;
 }
