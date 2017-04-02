@@ -12,9 +12,8 @@
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "build": "cd src && babel *.js -d ../dist",
-    "test": "jest --watchAll",
-    "test:once": "jest",
-    "test:coverage": "jest --coverage"
+    "test": "jest",
+    "test:watch": "jest --watchAll"
   },
   "dependencies": {
     "is-async-func": "^1.0.0"
@@ -29,5 +28,9 @@
   },
   "author": "Lochlan Bunn <bunn@lochlan.io>",
   "license": "MIT",
-  "repository": "https://github.com/loklaan/redux-motive"
+  "repository": "https://github.com/loklaan/redux-motive",
+  "jest": {
+    "coverageDirectory": "./coverage/",
+    "collectCoverage": true
+  }
 }

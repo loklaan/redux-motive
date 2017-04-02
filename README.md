@@ -1,7 +1,9 @@
 # Redux Motive ![stability](https://img.shields.io/badge/stability-%20%20%20%20%20experimental-red.svg)
 
 ![size](https://img.shields.io/badge/gzip%20size-2.3%20kB-grey.svg)
-![coverage](https://img.shields.io/badge/coverage-81%25-yellowgreen.svg)
+[![NPM](https://img.shields.io/npm/v/redux-motive.svg)](https://npmjs.com/package/redux-motive)
+[![Travis](https://img.shields.io/travis/loklaan/redux-motive.svg)](https://travis-ci.org/loklaan/redux-motive)
+[![Codecov](https://img.shields.io/codecov/c/github/loklaan/redux-motive.svg)](https://codecov.io/gh/loklaan/redux-motive)
 
 Simplify writing action creators, reducers and effects - without breaking redux.
 
