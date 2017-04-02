@@ -1,4 +1,4 @@
-const isAsyncFunc = require('./is-async-function');
+const isAsyncFunc = require('is-async-func');
 
 const PROGRESS_STATE_PROP = 'progressing';
 const INTENT_PREFIX = '@@INTENT';
@@ -53,8 +53,9 @@ function ReduxMotive (configuration) {
     return new ReduxMotive(configuration);
   }
 
+  const memoizedBoundMotives = memoizeFirst(bindDispatchToMotive);
   const config = configuration.config;
-  const model = {};
+  const motive = {};
   const reducers = {};
   const PREFIX = intentPrefix(config.prefix || '');
   const defaultHandlers = (config && config.handlers) || DEFAULT_HANDLERS;
@@ -73,11 +74,11 @@ function ReduxMotive (configuration) {
 
     if (!isAsyncFunc(intent)) {
       // Synchronous Intents
-      model[intentName] = (...args) =>
+      motive[intentName] = (...args) =>
         createAction(ACTION_TYPE, undefined, {
           [META_INTENT_ARGS]: args
         })
-      model[intentName].ACTION_TYPE = ACTION_TYPE;
+      motive[intentName].ACTION_TYPE = ACTION_TYPE;
 
       reducers[ACTION_TYPE] = (state, action) =>
         intent(state, ...(action.meta[META_INTENT_ARGS]));
@@ -88,12 +89,13 @@ function ReduxMotive (configuration) {
       const TYPE_END = `${ACTION_TYPE}/${HANDLER_SUFFIXES.END}`;
       const TYPE_ERROR = `${ACTION_TYPE}/${HANDLER_SUFFIXES.ERROR}`;
 
-      model[intentName] = (...args) => (dispatch, getState) => {
+      motive[intentName] = (...args) => (dispatch, getState) => {
         dispatch(createAsyncAction(TYPE_START, undefined, {
           [META_INTENT_ARGS]: args
         }));
 
-        intent(model, ...args)
+        const boundMotive = memoizedBoundMotives(motive, dispatch, getState)
+        intent(boundMotive, ...args)
           .then(reducer => {
             const intentState = reducer(getState());
             dispatch(createAsyncAction(TYPE_END, undefined, {
@@ -107,9 +109,9 @@ function ReduxMotive (configuration) {
             }));
           })
       }
-      model[intentName].ACTION_TYPE_START = TYPE_START;
-      model[intentName].ACTION_TYPE_END = TYPE_END;
-      model[intentName].ACTION_TYPE_ERROR = TYPE_ERROR;
+      motive[intentName].ACTION_TYPE_START = TYPE_START;
+      motive[intentName].ACTION_TYPE_END = TYPE_END;
+      motive[intentName].ACTION_TYPE_ERROR = TYPE_ERROR;
 
       reducers[TYPE_START] = (state, action) => {
         return intentsHandlers.start(
@@ -133,7 +135,7 @@ function ReduxMotive (configuration) {
     }
   });
 
-  Object.defineProperty(model, 'reducer', {
+  Object.defineProperty(motive, 'reducer', {
     writable: false,
     enumerable: false,
     value: (state = config.initialState, action) => {
@@ -143,7 +145,7 @@ function ReduxMotive (configuration) {
     }
   });
 
-  return model;
+  return motive;
 }
 
 module.exports = ReduxMotive;
@@ -173,4 +175,31 @@ function createAsyncAction (...args) {
   action.meta = action.meta || {};
   action.meta[META_INTENT_ASYNC] = true;
   return action;
+}
+
+function memoizeFirst (func) {
+  const cache = new WeakMap();
+  return function (arg) {
+    if (!cache.has(arg)) {
+      cache.set(arg, func.apply(null, arguments));
+    }
+    return cache.get(arg);
+  }
+}
+
+function bindDispatchToIntent (intent, dispatch) {
+  return function () {
+    return dispatch(intent.apply(null, arguments));
+  };
+}
+
+function bindDispatchToMotive (motive, dispatch, getState) {
+  const bound = {};
+  Object.defineProperty(bound, 'dispatch', { value: dispatch });
+  Object.defineProperty(bound, 'getState', { value: getState });
+  return Object.keys(motive).reduce((bound, name) => {
+    const intent = motive[name].intent || motive[name];
+    bound[name] = bindDispatchToIntent(intent);
+    return bound;
+  }, bound);
 }

@@ -1,8 +1,7 @@
 # Redux Motive ![stability](https://img.shields.io/badge/stability-%20%20%20%20%20experimental-red.svg)
 
-![size](https://img.shields.io/badge/size-2.3kb-grey.svg)
-![dependencies](https://img.shields.io/badge/dependencies-0-grey.svg)
-![coverage](https://img.shields.io/badge/coverage-84%25-yellowgreen.svg)
+![size](https://img.shields.io/badge/gzip%20size-2.3%20kB-grey.svg)
+![coverage](https://img.shields.io/badge/coverage-81%25-yellowgreen.svg)
 
 Simplify writing action creators, reducers and effects - without breaking redux.
 
@@ -181,6 +180,13 @@ ReduxMotive({
   }
 })
 ```
+
+###### `motive` parameter
+
+The first param in an async intent,`motive`, is similar to the return object with key differences:
+
+* All generated action creators are bound to `dispatch`
+* `dispatch` and `getState` are available as non-enumerable properties
 
 ###### Reducing async lifecycle
 

@@ -5,15 +5,20 @@
   "main": "dist/index.js",
   "module": "src/index.js",
   "files": [
+    "dist",
     "src"
   ],
   "scripts": {
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
     "build": "cd src && babel *.js -d ../dist",
     "test": "jest --watchAll",
     "test:once": "jest",
     "test:coverage": "jest --coverage"
   },
-  "dependencies": {},
+  "dependencies": {
+    "is-async-func": "^1.0.0"
+  },
   "devDependencies": {
     "babel-cli": "^6.24.0",
     "babel-preset-env": "^1.2.2",
