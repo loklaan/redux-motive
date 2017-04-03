@@ -53,9 +53,12 @@ describe('ReduxMotive', () => {
         },
 
         async rainSuperBad (motive, depthInMM) {
-          return state => Object.assign({}, state, {
-            rainDepth: depthInMM
-          });
+          return state => {
+            done.fail(new Error('Should not have reached this code!'))
+            return Object.assign({}, state, {
+              rainDepth: depthInMM
+            })
+          };
         }
       });
 
@@ -113,7 +116,7 @@ describe('ReduxMotive', () => {
         },
 
         rainPrettyGood: {
-          intent: async function rainPrettyGood (motive, depthInMM) {
+          effect: async function rainPrettyGood (motive, depthInMM) {
             return (state) => Object.assign({}, state, {
               rainDepth: depthInMM
             });
@@ -216,7 +219,7 @@ describe('ReduxMotive', () => {
       }, 0);
     });
 
-    it('should be ok if an expanded async intent only defines "intent" prop', (done) => {
+    it('should be ok if an expanded async intent only defines "effect" prop', (done) => {
       let store = null;
       const motive = ReduxMotive({
         config: {
@@ -225,7 +228,7 @@ describe('ReduxMotive', () => {
         },
 
         intent: {
-          async intent (motive) {}
+          async effect (motive) {}
         }
       });
 

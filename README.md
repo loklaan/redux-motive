@@ -1,291 +1,285 @@
 # Redux Motive ![stability](https://img.shields.io/badge/stability-%20%20%20%20%20experimental-red.svg)
 
-![size](https://img.shields.io/badge/gzip%20size-2.3%20kB-grey.svg)
+![size](https://img.shields.io/badge/gzip%20size-2.16%20kB-grey.svg)
 [![NPM](https://img.shields.io/npm/v/redux-motive.svg)](https://npmjs.com/package/redux-motive)
 [![Travis](https://img.shields.io/travis/loklaan/redux-motive.svg)](https://travis-ci.org/loklaan/redux-motive)
 [![Codecov](https://img.shields.io/codecov/c/github/loklaan/redux-motive.svg)](https://codecov.io/gh/loklaan/redux-motive)
 
 Simplify writing action creators, reducers and effects - without breaking redux.
 
+
 ```js
 const { reducer, ...actionCreators } = ReduxMotive({
+  // Sync function, combines Action Creator and Reducer
   addTodo (state, todo) {
-    return [ ...state, todo ]
+    return assign({}, state, { todos: [ ...state.todos, todo ] })
   },
 
+  // Async function, combines Action Creator and Effect
   async createTodo (motive, text, isDone) {
     const todo = await api('/todo', {text, isDone})
-    return state => motive.addTodo(todo)
+    motive.addTodo(todo)
   }
 })
+```
+
+## Install
+
+```shell
+yarn add redux-motive
+```
+
+#### Requirements
+
+Add `redux-thunk` to your store's middleware. _See [`redux-thunk` docs][redux-thunk] for more details._
+
+```shell
+yarn add redux-thunk
+```
+
+```js
+import thunk from 'redux-thunk'
+const store = createStore(reducers, applyMiddleware(thunk))
 ```
 
 ## Preamble
 
 In UI development, our **motive**'s for using redux are predictable.
 
-1. Reduce an Action to change the state _now_, to rerender the UI _soon_.
-2. Reduce the lifecycle of side effects, from an Action, to change state _over time_, to rerender the UI as the _effects progress_.
+1. **Reduce an Action** to change the state _now_, to rerender the UI _soon_.
+2. **Reduce the lifecycle of side effects**, from an Action, to change state _over time_, to rerender the UI as the _side effects progress_.
 
-In both cases, we carry **intent** to change the state from the moment an Action is dispatched. Redux is great for splitting data-flow concerns into small concepts, but it can introduce indirection over our intent, and at times this becomes the source of errors.
+Redux is great for splitting data-flow concerns into small concepts, but it can introduce indirection to a developers code, and at times this becomes the source of errors.
 
-## Ok so
+Motive removes indirection, by combining the purpose of a data-flow function to be both an Action Creator and a Reducer, or an Action Creator and an Effect.
 
-**With Motive, we write our intents as single functions, to then generate Action Creators and a Reducer.**
+## Comparison
 
+Generate action creators and a reducer with **`ReduxMotive`**.
 ```js
-function concatToTodos (todo, state) {
-  return Object.assign({}, state, {
-    todos: state.todos.concat(todo)
-  })
-}
-
 const { reducer, ...actionCreators } = ReduxMotive({
-  addTodo (state, text) {
-    const newTodo = { text, done: false }
-    return concatToTodos(newTodo, state)
+  // Sync function, combines Action Creator and Reducer
+  addTodo (state, todo) {
+    return assign({}, state, { todos: [ ...state.todos, todo ] })
+  },
+
+  // Async function, combines Action Creator and Effect
+  async createTodo (motive, text, isDone) {
+    const todo = await api('/todo', {text, isDone})
+    motive.addTodo(todo)
   }
 })
-
-const store = createStore(reducer, applyMiddleware(thunk))
-store.subscribe((action) => console.log(
-  action.type,
-  store.getState()
-))
-
-store.dispatch(
-  actionCreators.addTodo('Cook dinner')
-)
-
-// '@@INTENT/ADD_TODO'
-// {
-//   todos: { text: 'Cook dinner', done: false }
-// }
 ```
 
----
-
-**Motive reduces the state during the lifecycle of async functions, in three potential steps; start, end, error.**
-
-> Async functions terminate in a reducer function, which will be merged with the _end_ lifecycle handler.
-
+Write action types, action creators and reducers with **common redux boilerplate**.
 ```js
-//...
-  async createTodo (state, text) {
-    const todo = await api('/todo', {text})
-    return state => {
-      return concatToTodos(todo)
+const ADD_TODO = '@@MOTIVE/ADD_TODO'
+const CREATE_TODO_START = '@@MOTIVE/CREATE_TODO_START'
+const CREATE_TODO_END = '@@MOTIVE/CREATE_TODO_END'
+const CREATE_TODO_ERROR = '@@MOTIVE/CREATE_TODO_ERROR'
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case ADD_TODO:
+      return assign({}, state, { todos: [ ...state.todos, todo ] })
+    case CREATE_TODO_START:
+      return assign({}, state, { progressing: true })
+    case CREATE_TODO_END:
+      return assign({}, state, { progressing: false })
+    case CREATE_TODO_ERROR:
+      return assign({}, state, { error: action.payload, progressing: false })
+  }
+}
+
+const actionCreators = {
+  addTodo (todo) {
+    return { type: ADD_TODO, payload: { todo } }
+  },
+
+  createTodo (text, isDone) {
+    return (dispatch) => {
+      dispatch({ type: CREATE_TODO_START })
+      api('/todo', {text, isDone})
+        .then(todo => {
+          dispatch(actionCreators.addTodo(todo))
+          dispatch({ type: CREATE_TODO_END })
+        })
+        .catch(err => {
+          dispatch({ type: CREATE_TODO_ERROR, payload: err })
+        })
     }
   }
-//...
-
-store.dispatch(
-  actionCreators.createTodo('Cook dinner')
-)
-
-// '@@INTENT/CREATE_TODO_START'
-// {
-//   progressing: true
-// }
-
-//...
-
-// '@@INTENT/CREATE_TODO_END'
-// {
-//   progressing: false,
-//   todos: { text: 'Cook dinner', done: false }
-// }
-
-//... (or if the api request failed)
-
-// '@@INTENT/CREATE_TODO_ERROR'
-// {
-//   progressing: false,
-//   error: Error
-// }
+}
 ```
 
-## Install
+#### Summary
 
-Get started by installing Motive, and it's requirement `redux-thunk`.
+Inferring common redux patterns into `ReduxMotive` allows for _less_ coding.
 
-```shell
-npm install --save redux-motive redux-thunk
-# yarn add redux-motive redux-thunk
-```
-
-Add the `redux-thunk` middleware to your store. _See [`redux-thunk` docs][redux-thunk] for more details._
-
-```js
-import { createStore, applyMiddleware } from 'redux'
-import thunk from 'redux-thunk'
-import reducer from './reducers/index'
-
-const store = createStore(
-  reducer,
-  applyMiddleware(thunk)
-)
-```
+* Action Creators often pass all of their params into an Action payload; `ReduxMotive` always does behind the scenes.
+* The progress of an effect's _lifecycle_ in `ReduxMotive` is reduced to state at common stages: _start, end or error_.
+* The first param of an effect function is an Object of `dispatch`-bound Action Creators generated from the current Motive, making dispatching actions from inside effects simple.
 
 ## API
 
-### `ReduxMotive( configuration )`
+### *`ReduxMotive( configuration )`*
 
-#### `configuration` parameter
+### `configuration` parameter
 
-An object comprising a config object and intent functions.
+An Object comprised of functions, with a single reserved key: `config`.
 
-##### `config`
+#### `config`
 
-Initial state, default handlers for state/end/error, and optional prefix for action types.
+Define initial state, default handlers for state/end/error, and optional prefix for action types.
+
+<details>
+<summary>Config Example</summary>
+  <p>
 
 ```js
+
 ReduxMotive({
+  // Default config values
   config: {
-    initialState: {},
-    handlers: DEFAULT_HANDLERS,
     prefix: ''
-  }
-})
-```
-
-##### `intent` - _Sync_ function
-> _Combination of a Reducer and an Action Creator._
-
-Function that takes the state, with any additional arguments, and returns new state.
-
-```js
-ReduxMotive({
-  someIntent (state, additional, args) {
-    return state
-  }
-})
-```
-
-##### `intent` - _Async_ function
-> _Combination of a Reducer, Effects, and an Action Creator._
-
-Function that performs side effects before (optionally) returning a Reducer.
-
-```js
-ReduxMotive({
-  async someIntent (motive, additional, args) {
-    const response = await api(additional, args)
-    return (state) => ({
-      ...state,
-      response
-    })
-  },
-  
-  async anotherIntent (motive) {
-    motive.someIntent('additional', 'args')
-  }
-})
-```
-
-###### `motive` parameter
-
-The first param in an async intent,`motive`, is similar to the return object with key differences:
-
-* All generated action creators are bound to `dispatch`
-* `dispatch` and `getState` are available as non-enumerable properties
-
-###### Reducing async lifecycle
-
-State is reduced several times, around the lifecycle of an async intent:
-
-1. When first called, `start` reducer handler is called.
-2. When the Reducer is returned from the async function, `end` reducer handler is called.
-3. If an error threw during the async function, `error` reducer handler is called.
-
-###### Lifecycle handlers per async intent
-
-Turn an async intent function into an object, with the following props
-
-* `intent` - The async intent function
-* `handlers` - An object comprised of the `start`/`end`/`error` reducers
-
-```js
-ReduxMotive({
-  something: {
-    intent: async function (motive, additional, args) {
-      const response = await api(additional, args)
-      return (state) => ({
-        ...state,
-        response
-      })
-    },
+    initialState: {},
     handlers: {
-      start: (state) => { /* ... */ return newState },
-      end: (intentState) => { /* ... */ return newState },
-      error: (state, error) => { /* ... */ return newState }
+      start: (state) => assign({}, state, { progressing: true }),
+      end: (state) => assign({}, state, { progressing: false }),
+      error: (state, error) => assign({}, state, { progressing: false, error })
+    },
+  }
+})
+```
+
+  </p>
+</details>
+
+#### Synchronous Function
+
+> _Combination of an Action Creator and a **Reducer**._
+
+Function that is given the current state and any additional arguments from the generated Action Creator.
+
+Should return the new state.
+
+<details>
+<summary>Synchronous Example</summary>
+  <p>
+
+```js
+const { todo } = ReduxMotive({
+  todo (state, isDone) {
+    return assign({}, state, { isDone })
+  }
+})
+
+dispatch( todo(true) )
+```
+
+  </p>
+</details>
+
+#### Asynchronous Function
+
+> _Combination of an Action Creator and an **Effect**._
+
+Function that is given a **`motive`** Object any additional arguments from the generated Action Creator.
+
+Should invoke side effects and other Action Creators. Doesn't return new state.
+
+**`motive`** Object  
+* `dispatch`
+* `getState`
+* Action Creators returned by `ReduxMotive`, bound to `dispatch`
+
+<details>
+<summary>Asynchronous Example</summary>
+  <p>
+
+```js
+ReduxMotive({
+  // ...
+
+  async syncTodo (motive) {
+    const todo = await api();
+    motive.todo(todo.isDone)
+  }
+})
+```
+
+  </p>
+</details>
+
+#### Asynchronous Function 'lifecycle' stages
+
+Refer to the [Comparison](#comparison) for when 'lifecycle' stages are actioned and reduced.
+
+The stages can be overridden:  
+* In the `config`
+* Per (asynchronous) function
+
+<details>
+<summary>Override Handles Example</summary>
+  <p>
+
+```js
+ReduxMotive({
+  syncTodo: {
+    handlers: {
+      start (start) { /* ... */ },
+      end (start) { /* ... */ },
+      error (start) { /* ... */ }
+    },
+    async effect (motive) {
+      const todo = await api();
+      motive.todo(todo.isDone)
     }
   }
 })
 ```
 
-#### Return
+  </p>
+</details>
 
-Calling `ReduxMotive` returns an object comprising Action Creators, generated from config and intents, with a single Reducer to handle the Actions of all intents.
+### Return
 
 ```js
 const motive = ReduxMotive({
-  config: { /* ... */ },
-  
-  intentSync (state, foo, bar) {
-    // ...
-    return newState
-  },
-  
-  async intentAsync (motive, baz, boo) {
-    // effects ...
-    return state => { /* ... */ return newState }
-  }
-})
+  todo () {},
+  async syncTodo () {}
+});
 
-console.log(motive)
+console.log(motive);
 // {
-//   reducer: function (state, action) { ... },
-//
-//   intentSync: function (foo, bar) {
-//     return { type: '@@INTENT/INTENT_SYNC', ... }
-//   },
-//
-//   intentAsync: function (baz, boo) {
-//     return { type: '@@INTENT/INTENT_ASYNC', ... }
-//   }
+//   reducer,               Reducer function, to be used in a Redux store
+//   todo,                  An Action Creator generated from todo in ReduxMotive
+//   syncTodo               An Action Creator generated from syncTodo in ReduxMotive
 // }
 ```
 
 #### Action Types
 
-Action Types are exposed for every intent, and intent lifecycle reducers.
+Action types are attaches as properties to generated Action Creators.
 
-For using and reducing intents in normal Redux code surface.
-
-```js
-console.log(motive.intentSync.ACTION_TYPE)
-// @@INTENT/<PREFIX>/INTENT_SYNC
-
-console.log(motive.intentAsync.ACTION_TYPE_START)
-// @@INTENT/<PREFIX>/INTENT_ASYNC_START
-console.log(motive.intentAsync.ACTION_TYPE_END)
-// @@INTENT/<PREFIX>/INTENT_ASYNC_END
-console.log(motive.intentAsync.ACTION_TYPE_ERROR)
-// @@INTENT/<PREFIX>/INTENT_ASYNC_ERROR
-```
-
-#### Default Handlers
-
-The default lifecycle handlers in Motive simply toggle a `progressing` prop on the state, and attaches an `error` when encounted. Override in the `config.handlers` of a new Motive, or per async intent.
+<details>
+<summary>Example</summary>
+  <p>
 
 ```js
-export default {
-  start: (state) => ({ ...state, progressing: true }),
-  end: (state) => ({ ...state, progressing: false }),
-  error: (state, error) => ({ ...state, error, progressing: false }),
-}
+console.log(motive.todo.ACTION_TYPE)
+// @@MOTIVE/<PREFIX>/TODO_SYNC
+
+console.log(motive.syncTodo.ACTION_TYPE_START)
+// @@MOTIVE/<PREFIX>/SYNC_TODO_START
+console.log(motive.syncTodo.ACTION_TYPE_END)
+// @@MOTIVE/<PREFIX>/SYNC_TODO_END
+console.log(motive.syncTodo.ACTION_TYPE_ERROR)
+// @@MOTIVE/<PREFIX>/SYNC_TODO_ERROR
 ```
+
+  </p>
+</details>
 
 ## License
 

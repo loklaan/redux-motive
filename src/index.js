@@ -1,152 +1,134 @@
 const isAsyncFunc = require('is-async-func');
 
 const PROGRESS_STATE_PROP = 'progressing';
-const INTENT_PREFIX = '@@INTENT';
-const META_INTENT_ASYNC = '@@intentasync';
-const META_INTENT_ARGS = '@@intentargs';
-const META_INTENT_STATE = '@@intentstate';
+const MOTIVE_PREFIX = '@@MOTIVE';
+const FUNCOBJ_EFFECT_KEY = 'effect';
+const META_MOTIVE_ASYNC = '@@motiveasync';
+const META_MOTIVE_ARGS = '@@motiveargs';
 const HANDLER_SUFFIXES = {
   START: 'START',
   END: 'END',
   ERROR: 'ERROR'
 }
 const DEFAULT_HANDLERS = {
-  start (state) {
-    return Object.assign({}, state, { [PROGRESS_STATE_PROP]: true });
-  },
-  end (intentState) {
-    return Object.assign({}, intentState, { [PROGRESS_STATE_PROP]: false });
-  },
-  error (state, error) {
-    return Object.assign(
-      {},
-      state,
-      { [PROGRESS_STATE_PROP]: false, error }
-    );
-  },
+  start: (state) =>
+    Object.assign({}, state, { [PROGRESS_STATE_PROP]: true }),
+  end: (state) =>
+    Object.assign({}, state, { [PROGRESS_STATE_PROP]: false }),
+  error: (state, error) =>
+    Object.assign({}, state, { [PROGRESS_STATE_PROP]: false, error })
 }
 
 /**
- * Motive is an abstraction of Redux action creators and reducers, comprised of
- * data-flow functions called Intents.
+ * ReduxMotive generates Action Creators and a Reducer, from sync or async
+ * functions.
  *
- * An 'Intent' fulfills the roles of an action creator and a reducer; it is
- * a pattern to encapsulate concerns of both into a single function that
- * takes free-form parameters to return a new state tree.
+ * redux-thunk is required in the redux store.
  *
- * Async intents are given further utility, by wrapping their invocation
- * lifecycle with start, end, and error handlers. These can be easily overridden
- * to suit the state shape of the Motive.
- *
- * A Motive will generate an object comprised of action creators, with the name
- * of intents, and a function named reducer.
- *
- * Async Intents use redux-thunk, making it a required middleware in the same
- * redux store configured with a Motive's reducer.
- *
- * @param {{config: {initialState,prefix,handlers}}} configuration
  * @constructor
- * @return {Object}
+ * @param {Object<>} configuration
+ * @return {Object<>}
  */
 function ReduxMotive (configuration) {
   if (!(this instanceof ReduxMotive)) {
     return new ReduxMotive(configuration);
   }
 
-  const memoizedBoundMotives = memoizeFirst(bindDispatchToMotive);
   const config = configuration.config;
-  const motive = {};
-  const reducers = {};
+  const actionCreators = {};
+  const reducersMap = {};
   const PREFIX = intentPrefix(config.prefix || '');
   const defaultHandlers = (config && config.handlers) || DEFAULT_HANDLERS;
+  const bindAsMotive = memoizeFirst(constructEffectMotive);
 
   const IGNORED_KEYS = [ 'config' ];
-  Object.keys(configuration).forEach(intentName => {
-    if (IGNORED_KEYS.includes(intentName)) return;
+  function loopMotiveConfiguration (funcName) {
+    if (IGNORED_KEYS.includes(funcName)) return;
 
-    const ACTION_TYPE = `${PREFIX}/${snakeCase(intentName)}`;
-    let intent = configuration[intentName];
-    let intentsHandlers = defaultHandlers;
-    if (intent.intent) {
-      intentsHandlers = intent.handlers || intentsHandlers;
-      intent = intent.intent;
+    const ACTION_TYPE = `${PREFIX}/${snakeCase(funcName)}`;
+    let func = configuration[funcName];
+    let ourHandlers = defaultHandlers;
+    const hitAsyncConfig = !!func[FUNCOBJ_EFFECT_KEY];
+    if (hitAsyncConfig) {
+      ourHandlers = func.handlers || ourHandlers;
+      func = func[FUNCOBJ_EFFECT_KEY];
     }
 
-    if (!isAsyncFunc(intent)) {
-      // Synchronous Intents
-      motive[intentName] = (...args) =>
-        createAction(ACTION_TYPE, undefined, {
-          [META_INTENT_ARGS]: args
-        })
-      motive[intentName].ACTION_TYPE = ACTION_TYPE;
-
-      reducers[ACTION_TYPE] = (state, action) =>
-        intent(state, ...(action.meta[META_INTENT_ARGS]));
-    }
-    else {
-      // Asynchronous Intents
+    if (hitAsyncConfig || isAsyncFunc(func)) {
       const TYPE_START = `${ACTION_TYPE}/${HANDLER_SUFFIXES.START}`;
       const TYPE_END = `${ACTION_TYPE}/${HANDLER_SUFFIXES.END}`;
       const TYPE_ERROR = `${ACTION_TYPE}/${HANDLER_SUFFIXES.ERROR}`;
 
-      motive[intentName] = (...args) => (dispatch, getState) => {
-        dispatch(createAsyncAction(TYPE_START, undefined, {
-          [META_INTENT_ARGS]: args
-        }));
+      function asyncMotiveActionCreator () {
+        const args = [...arguments];
+        return function asyncMotiveThunk (dispatch, getState) {
+          const meta = {
+            [META_MOTIVE_ARGS]: args
+          };
 
-        const boundMotive = memoizedBoundMotives(motive, dispatch, getState)
-        intent(boundMotive, ...args)
-          .then(reducer => {
-            const intentState = typeof reducer === 'function'
-              ? reducer(getState())
-              : getState();
-            dispatch(createAsyncAction(TYPE_END, undefined, {
-              [META_INTENT_STATE]: intentState,
-              [META_INTENT_ARGS]: args
-            }));
-          })
-          .catch(err => {
-            dispatch(createAsyncAction(TYPE_ERROR, err, {
-              [META_INTENT_ARGS]: args
-            }));
-          })
+          dispatch(createAsyncAction(TYPE_START, meta));
+
+          const boundMotive = bindAsMotive(actionCreators, dispatch, getState)
+          func(boundMotive, ...args)
+            .then(() => {
+              dispatch(createAsyncAction(TYPE_END, meta));
+            })
+            .catch(err => {
+              dispatch(createAsyncAction(TYPE_ERROR, meta, err));
+            })
+        };
       }
-      motive[intentName].ACTION_TYPE_START = TYPE_START;
-      motive[intentName].ACTION_TYPE_END = TYPE_END;
-      motive[intentName].ACTION_TYPE_ERROR = TYPE_ERROR;
+      asyncMotiveActionCreator.ACTION_TYPE_START = TYPE_START;
+      asyncMotiveActionCreator.ACTION_TYPE_END = TYPE_END;
+      asyncMotiveActionCreator.ACTION_TYPE_ERROR = TYPE_ERROR;
+      actionCreators[funcName] = asyncMotiveActionCreator;
 
-      reducers[TYPE_START] = (state, action) => {
-        return intentsHandlers.start(
+      reducersMap[TYPE_START] = (state, action) => {
+        return ourHandlers.start(
           state,
-          ...(action.meta[META_INTENT_ARGS])
+          ...(action.meta[META_MOTIVE_ARGS])
         );
       }
-      reducers[TYPE_END] = (state, action) => {
-        return intentsHandlers.end(
-          action.meta[META_INTENT_STATE],
-          ...(action.meta[META_INTENT_ARGS])
+      reducersMap[TYPE_END] = (state, action) => {
+        return ourHandlers.end(
+          state,
+          ...(action.meta[META_MOTIVE_ARGS])
         );
       }
-      reducers[TYPE_ERROR] = (state, action) => {
-        return intentsHandlers.error(
+      reducersMap[TYPE_ERROR] = (state, action) => {
+        return ourHandlers.error(
           state,
           action.payload,
-          ...(action.meta[META_INTENT_ARGS])
+          ...(action.meta[META_MOTIVE_ARGS])
         );
       }
-    }
-  });
+    } else {
+      function syncMotiveActionCreator () {
+        return createMotiveAction(
+          ACTION_TYPE,
+          { [META_MOTIVE_ARGS]: [ ...arguments ] }
+        )
+      }
+      syncMotiveActionCreator.ACTION_TYPE = ACTION_TYPE;
+      actionCreators[funcName] = syncMotiveActionCreator;
 
-  Object.defineProperty(motive, 'reducer', {
-    writable: false,
-    enumerable: false,
-    value: (state = config.initialState, action) => {
-      return reducers[action.type]
-        ? reducers[action.type](state, action)
-        : state;
+      function syncMotiveReducer (state, action) {
+        return func(state, ...(action.meta[META_MOTIVE_ARGS]));
+      }
+      reducersMap[ACTION_TYPE] = syncMotiveReducer;
     }
-  });
+  }
 
+  Object.keys(configuration).forEach(loopMotiveConfiguration);
+
+  function motiveReducer (state = config.initialState, action) {
+    return reducersMap[action.type]
+      ? reducersMap[action.type](state, action)
+      : state;
+  }
+
+  const motive = Object.assign({}, actionCreators);
+  Object.defineProperty(motive, 'reducer', { value: motiveReducer });
   return motive;
 }
 
@@ -160,21 +142,18 @@ function snakeCase (str) {
 }
 
 function intentPrefix (name) {
-  return `${INTENT_PREFIX}${name ? '/' : ''}${snakeCase(name)}`;
+  return `${MOTIVE_PREFIX}${name ? '/' : ''}${snakeCase(name)}`;
 }
 
-function createAction (type, payload, meta = {}) {
-  return {
-    type,
-    payload,
-    meta,
-    error: Error.isPrototypeOf(payload)
-  };
+function createMotiveAction (type, meta, payload) {
+  const action = { type, meta };
+  if (payload) action.payload = payload;
+  return action;
 }
 
 function createAsyncAction (...args) {
-  const action = createAction(...args);
-  action.meta[META_INTENT_ASYNC] = true;
+  const action = createMotiveAction(...args);
+  action.meta[META_MOTIVE_ASYNC] = true;
   return action;
 }
 
@@ -188,19 +167,25 @@ function memoizeFirst (func) {
   }
 }
 
-function bindDispatchToIntent (intent, dispatch) {
+function constructEffectMotive (actionCreators, dispatch, getState) {
+  const motive = {};
+  Object.defineProperty(motive, 'dispatch', { value: dispatch });
+  Object.defineProperty(motive, 'getState', { value: getState });
+  return bindDispatchToActionCreators(motive, actionCreators, dispatch);
+}
+
+function bindDispatchToActionCreator (func, dispatch) {
   return function () {
-    return dispatch(intent.apply(null, arguments));
+    return dispatch(func.apply(null, arguments));
   };
 }
 
-function bindDispatchToMotive (motive, dispatch, getState) {
-  const bound = {};
-  Object.defineProperty(bound, 'dispatch', { value: dispatch });
-  Object.defineProperty(bound, 'getState', { value: getState });
-  return Object.keys(motive).reduce((bound, name) => {
-    const intent = motive[name].intent || motive[name];
-    bound[name] = bindDispatchToIntent(intent, dispatch);
-    return bound;
-  }, bound);
+function bindDispatchToActionCreators (target, actionCreators, dispatch) {
+  return Object.keys(actionCreators).reduce((target, funcName) => {
+    target[funcName] = bindDispatchToActionCreator(
+      actionCreators[funcName],
+      dispatch
+    );
+    return target;
+  }, target);
 }

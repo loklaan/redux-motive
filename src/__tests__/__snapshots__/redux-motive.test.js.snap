@@ -4,7 +4,7 @@ exports[`ReduxMotive constructor should construct empty intent 1`] = `Object {}`
 
 exports[`ReduxMotive constructor should construct empty intent 2`] = `[Function]`;
 
-exports[`ReduxMotive intents should be ok if an expanded async intent only defines "intent" prop 1`] = `Object {}`;
+exports[`ReduxMotive intents should be ok if an expanded async intent only defines "effect" prop 1`] = `Object {}`;
 
 exports[`ReduxMotive intents should be ok when async intent returns nothing 1`] = `Object {}`;
 
@@ -23,7 +23,6 @@ Object {
 exports[`ReduxMotive intents should work with single async intent 3`] = `
 Object {
   "progressing": false,
-  "rainDepth": 10,
 }
 `;
 
@@ -53,7 +52,6 @@ Object {
 exports[`ReduxMotive intents should work with single async intent with configured handlers 3`] = `
 Object {
   "isSubmerged": false,
-  "rainDepth": 10,
 }
 `;
 
