@@ -281,8 +281,17 @@ console.log(motive.syncTodo.ACTION_TYPE_ERROR)
   </p>
 </details>
 
+## Alternatives & inspirations
+
+_Library_                              | _Description_
+---                                    | ---
+[redux-schemas][redux-schemas]         | Similar redux util library, making different API choices, but with more utility.
+[freactal][freactal]                   | Unidirection store for React, with a concise api for async actions and selectors.
+
 ## License
 
 Licensed under the MIT License, Copyright © 2017 Lochlan Bunn.
 
 [redux-thunk]: https://github.com/gaearon/redux-thunk
+[freactal]: https://github.com/FormidableLabs/freactal
+[redux-schemas]: https://github.com/iamtommcc/redux-schemas
