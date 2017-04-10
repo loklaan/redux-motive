@@ -9,7 +9,7 @@
     "src"
   ],
   "scripts": {
-    "prepublish": "npm run build",
+    "prepublish": "npm run test && npm run build",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "build": "cd src && babel *.js -d ../dist",
