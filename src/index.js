@@ -1,4 +1,4 @@
-const isAsyncFunc = require('is-async-func');
+import isAsyncFunc from 'is-async-func';
 
 const PROGRESS_STATE_PROP = 'progressing';
 const MOTIVE_PREFIX = '@@MOTIVE';
@@ -132,7 +132,7 @@ function ReduxMotive (configuration) {
   return motive;
 }
 
-module.exports = ReduxMotive;
+export default ReduxMotive;
 
 function snakeCase (str) {
   return str

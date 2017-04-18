@@ -2,8 +2,9 @@
   "name": "redux-motive",
   "version": "0.2.1",
   "description": "Simplify writing action creators, reducers and effects - without breaking redux.",
-  "main": "dist/index.js",
-  "module": "src/index.js",
+  "main": "dist/redux-motive.js",
+  "module": "dist/redux-motive.es.js",
+  "umd": "dist/redux-motive.umd.js",
   "files": [
     "dist",
     "src"
@@ -12,7 +13,9 @@
     "prepublish": "npm run test && npm run build",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
-    "build": "cd src && babel *.js -d ../dist",
+    "build": "npm run build:modules && npm run build:umd",
+    "build:umd": "rollup -c support/rollup.umd.config.js",
+    "build:modules": "rollup -c support/rollup.modules.config.js",
     "test": "jest",
     "test:watch": "jest --watchAll"
   },
@@ -20,12 +23,20 @@
     "is-async-func": "^1.0.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.24.0",
+    "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-env": "^1.2.2",
+    "babelrc-rollup": "^3.0.0",
     "jest": "^19.0.2",
     "jest-babel": "^1.0.1",
     "redux": "^3.6.0",
-    "redux-thunk": "^2.2.0"
+    "redux-thunk": "^2.2.0",
+    "rollup": "^0.41.6",
+    "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-cleanup": "^1.0.0",
+    "rollup-plugin-commonjs": "^8.0.2",
+    "rollup-plugin-filesize": "^1.2.1",
+    "rollup-plugin-node-resolve": "^3.0.0",
+    "rollup-plugin-uglify": "^1.0.1"
   },
   "author": "Lochlan Bunn <bunn@lochlan.io>",
   "license": "MIT",

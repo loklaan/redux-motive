@@ -1,3 +1,4 @@
+import regeneratorRuntime from 'regenerator-runtime';
 import ReduxMotive from '../';
 import { createStore, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
