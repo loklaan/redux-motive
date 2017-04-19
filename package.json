@@ -6,8 +6,7 @@
   "module": "dist/redux-motive.es.js",
   "umd": "dist/redux-motive.umd.js",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "scripts": {
     "prepublish": "npm run test && npm run build",
@@ -16,6 +15,7 @@
     "build": "npm run build:modules && npm run build:umd",
     "build:umd": "rollup -c support/rollup.umd.config.js",
     "build:modules": "rollup -c support/rollup.modules.config.js",
+    "prettier": "prettier-standard 'src/**/*.js' 'support/*.js'",
     "test": "jest",
     "test:watch": "jest --watchAll"
   },
@@ -28,6 +28,7 @@
     "babelrc-rollup": "^3.0.0",
     "jest": "^19.0.2",
     "jest-babel": "^1.0.1",
+    "prettier-standard": "^4.0.0",
     "redux": "^3.6.0",
     "redux-thunk": "^2.2.0",
     "rollup": "^0.41.6",
@@ -44,5 +45,18 @@
   "jest": {
     "coverageDirectory": "./coverage/",
     "collectCoverage": true
+  },
+  "lint-staged": {
+    "gitDir": "../",
+    "linters": {
+      "src/**/*.js": [
+        "prettier-standard",
+        "git add"
+      ],
+      "support/**/*.js": [
+        "prettier-standard",
+        "git add"
+      ]
+    }
   }
 }

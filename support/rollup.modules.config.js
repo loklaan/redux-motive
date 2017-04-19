@@ -1,4 +1,4 @@
-import { pkg, external, commonPlugins } from './rollup.shared.config';
+import {pkg, external, commonPlugins} from './rollup.shared.config'
 
 export default {
   entry: 'src/index.js',
@@ -16,4 +16,4 @@ export default {
       sourceMap: true
     }
   ]
-};
+}
