@@ -5,20 +5,20 @@ import thunk from 'redux-thunk'
 
 describe('ReduxMotive', () => {
   describe('constructor', () => {
-    it('should construct empty intent', () => {
+    it('should not construct empty motive', () => {
+      expect(() => {
+        const motive = new ReduxMotive({})
+      }).toThrow()
+    })
+
+    it('should construct a motive', () => {
       expect(() => {
         const motive = new ReduxMotive({
-          config: {initialState: {}}
+          sync: { foo () {} }
         })
         expect(motive).toMatchSnapshot()
         expect(motive.reducer).toMatchSnapshot()
       }).not.toThrow()
-    })
-
-    it('should not construct w/ bad config', () => {
-      expect(() => {
-        const intent = new ReduxMotive({})
-      }).toThrow()
     })
   })
 
@@ -30,10 +30,12 @@ describe('ReduxMotive', () => {
           initialState: {}
         },
 
-        rain: (state, depthInMM) =>
-          Object.assign({}, state, {
-            rainDepth: depthInMM
-          })
+        sync: {
+          rain: (state, depthInMM) =>
+            Object.assign({}, state, {
+              rainDepth: depthInMM
+            })
+        },
       })
 
       const store = createStore(motive.reducer, applyMiddleware(thunk))
@@ -42,7 +44,7 @@ describe('ReduxMotive', () => {
       expect(store.getState()).toMatchSnapshot()
     })
 
-    it('should work with single async intent', done => {
+    it('should work with single async motive', done => {
       let store = null
       const motive = ReduxMotive({
         config: {
@@ -50,12 +52,14 @@ describe('ReduxMotive', () => {
           initialState: {}
         },
 
-        async rainSuperBad (motive, depthInMM) {
-          return state => {
-            done.fail(new Error('Should not have reached this code!'))
-            return Object.assign({}, state, {
-              rainDepth: depthInMM
-            })
+        async: {
+          async rainSuperBad (motive, depthInMM) {
+            return state => {
+              done.fail(new Error('Should not have reached this code!'))
+              return Object.assign({}, state, {
+                rainDepth: depthInMM
+              })
+            }
           }
         }
       })
@@ -73,7 +77,7 @@ describe('ReduxMotive', () => {
       }, 0)
     })
 
-    it('should work with single async intent that throws', done => {
+    it('should work with single async motive that throws', done => {
       let store = null
       const motive = ReduxMotive({
         config: {
@@ -81,8 +85,10 @@ describe('ReduxMotive', () => {
           initialState: {}
         },
 
-        async rainPrettyBad (motive, depthInMM) {
-          throw new Error('foo')
+        async: {
+          async rainPrettyBad (motive, depthInMM) {
+            throw new Error('foo')
+          }
         }
       })
 
@@ -99,7 +105,7 @@ describe('ReduxMotive', () => {
       }, 0)
     })
 
-    it('should work with single async intent with configured handlers', done => {
+    it('should work with single async motive with configured handlers', done => {
       let store = null
       const motive = ReduxMotive({
         config: {
@@ -107,29 +113,31 @@ describe('ReduxMotive', () => {
           initialState: {}
         },
 
-        rainPrettyGood: {
-          effect: async function rainPrettyGood (motive, depthInMM) {
-            return state =>
-              Object.assign({}, state, {
-                rainDepth: depthInMM
-              })
-          },
-          handlers: {
-            start (state, depthInMM) {
-              return Object.assign({}, state, {
-                isSubmerged: true
-              })
+        async: {
+          rainPrettyGood: {
+            effect: async function rainPrettyGood (motive, depthInMM) {
+              return state =>
+                Object.assign({}, state, {
+                  rainDepth: depthInMM
+                })
             },
-            end (state, depthInMM) {
-              return Object.assign({}, state, {
-                isSubmerged: false
-              })
-            },
-            error (state, depthInMM) {
-              return Object.assign({}, state, {
-                isSubmerged: true,
-                drowned: true
-              })
+            handlers: {
+              start (state, depthInMM) {
+                return Object.assign({}, state, {
+                  isSubmerged: true
+                })
+              },
+              end (state, depthInMM) {
+                return Object.assign({}, state, {
+                  isSubmerged: false
+                })
+              },
+              error (state, depthInMM) {
+                return Object.assign({}, state, {
+                  isSubmerged: true,
+                  drowned: true
+                })
+              }
             }
           }
         }
@@ -148,37 +156,38 @@ describe('ReduxMotive', () => {
       }, 0)
     })
 
-    it('should have a bound motive in async intent', done => {
-      let store = null
+    it('should have a bound motive in async motive', done => {
       const motive = ReduxMotive({
         config: {
           prefix: 'test',
           initialState: {}
         },
 
-        async intent (motive) {
-          try {
-            expect(motive).toBeDefined()
-            // Bound action creators should be enumerable
-            expect(Object.keys(motive)).toEqual(['intent'])
-            // But dispatch/getState shouldn't
-            expect(motive.dispatch).toBeDefined()
-            expect(motive.getState).toBeDefined()
-            done()
-          } catch (err) {
-            done.fail(err)
+        async: {
+          async motive (motive) {
+            try {
+              expect(motive).toBeDefined()
+              // Bound action creators should be enumerable
+              expect(Object.keys(motive)).toEqual(['motive'])
+              // But dispatch/getState shouldn't
+              expect(motive.dispatch).toBeDefined()
+              expect(motive.getState).toBeDefined()
+              done()
+            } catch (err) {
+              done.fail(err)
+            }
+            return state => state
           }
-          return state => state
         }
       })
 
-      store = createStore(motive.reducer, applyMiddleware(thunk))
+      const store = createStore(motive.reducer, applyMiddleware(thunk))
 
       expect(store.getState()).toMatchSnapshot()
-      store.dispatch(motive.intent())
+      store.dispatch(motive.motive())
     })
 
-    it('should be ok when async intent returns nothing', done => {
+    it('should be ok when async motive returns nothing', done => {
       let store = null
       const motive = ReduxMotive({
         config: {
@@ -186,13 +195,15 @@ describe('ReduxMotive', () => {
           initialState: {}
         },
 
-        async intent (motive) {}
+        async: {
+          async motive (motive) {}
+        }
       })
 
       store = createStore(motive.reducer, applyMiddleware(thunk))
 
       expect(store.getState()).toMatchSnapshot()
-      store.dispatch(motive.intent())
+      store.dispatch(motive.motive())
       setTimeout(() => {
         if (store.getState().error) {
           done.fail(store.getState().error)
@@ -203,7 +214,7 @@ describe('ReduxMotive', () => {
       }, 0)
     })
 
-    it('should be ok if an expanded async intent only defines "effect" prop', done => {
+    it('should be ok if an expanded async motive only defines "effect" prop', done => {
       let store = null
       const motive = ReduxMotive({
         config: {
@@ -211,15 +222,17 @@ describe('ReduxMotive', () => {
           initialState: {}
         },
 
-        intent: {
-          async effect (motive) {}
+        async: {
+          motive: {
+            async effect (motive) {}
+          }
         }
       })
 
       store = createStore(motive.reducer, applyMiddleware(thunk))
 
       expect(store.getState()).toMatchSnapshot()
-      store.dispatch(motive.intent())
+      store.dispatch(motive.motive())
       setTimeout(() => {
         if (store.getState().error) {
           done.fail(store.getState().error)
@@ -230,7 +243,7 @@ describe('ReduxMotive', () => {
       }, 0)
     })
 
-    it('should dispatch an bound motive action creator in an async intent', done => {
+    it('should dispatch an bound motive action creator in an async motive', done => {
       let store = null
       const motive = ReduxMotive({
         config: {
@@ -238,18 +251,20 @@ describe('ReduxMotive', () => {
           initialState: {}
         },
 
-        async intentA (motive) {
-          motive.intentB()
-        },
-        async intentB () {
-          done()
+        async: {
+          async motiveA (motive) {
+            motive.motiveB()
+          },
+          async motiveB () {
+            done()
+          }
         }
       })
 
       store = createStore(motive.reducer, applyMiddleware(thunk))
 
       expect(store.getState()).toMatchSnapshot()
-      store.dispatch(motive.intentA())
+      store.dispatch(motive.motiveA())
       setTimeout(() => {
         if (store.getState().error) {
           done.fail(store.getState().error)

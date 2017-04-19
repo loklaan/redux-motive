@@ -1,6 +1,6 @@
 # Redux Motive ![stability](https://img.shields.io/badge/stability-%20%20%20%20%20experimental-red.svg)
 
-![size](https://img.shields.io/badge/gzip%20size-1.27%20kB-grey.svg)
+![size](https://img.shields.io/badge/gzip%20size-1.25%20kB-grey.svg)
 [![NPM](https://img.shields.io/npm/v/redux-motive.svg)](https://npmjs.com/package/redux-motive)
 [![Travis](https://img.shields.io/travis/loklaan/redux-motive.svg)](https://travis-ci.org/loklaan/redux-motive)
 [![Codecov](https://img.shields.io/codecov/c/github/loklaan/redux-motive.svg)](https://codecov.io/gh/loklaan/redux-motive)
@@ -10,18 +10,24 @@ Simplify writing action creators, reducers and effects - without breaking redux.
 
 ```js
 const { reducer, ...actionCreators } = ReduxMotive({
-  // Sync function, combines Action Creator and Reducer
-  addTodo (state, todo) {
-    return assign({}, state, { todos: [ ...state.todos, todo ] })
+  config: {},
+  sync: {
+    // Sync function, combines Action Creator and Reducer
+    addTodo (state, todo) {
+      return assign({}, state, { todos: [ ...state.todos, todo ] })
+    },
   },
-
-  // Async function, combines Action Creator and Effect
-  async createTodo (motive, text, isDone) {
-    const todo = await api('/todo', {text, isDone})
-    motive.addTodo(todo)
-  }
+  async: {
+    // Async function, combines Action Creator and Effect
+    async createTodo (motive, text, isDone) {
+      const todo = await api('/todo', {text, isDone})
+      motive.addTodo(todo)
+    }
+  },
 })
 ```
+
+> **Note: API reflects the above example, while the rest of the readme may be out-of-date.**
 
 ## Install
 
@@ -141,7 +147,7 @@ Define initial state, default handlers for state/end/error, and optional prefix 
 ReduxMotive({
   // Default config values
   config: {
-    prefix: ''
+    prefix: '',
     initialState: {},
     handlers: {
       start: (state) => assign({}, state, { progressing: true }),

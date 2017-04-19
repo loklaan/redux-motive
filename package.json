@@ -19,9 +19,7 @@
     "test": "jest",
     "test:watch": "jest --watchAll"
   },
-  "dependencies": {
-    "is-async-func": "^1.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-env": "^1.2.2",

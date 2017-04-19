@@ -1,5 +1,3 @@
-import isAsyncFunc from 'is-async-func'
-
 const PROGRESS_STATE_PROP = 'progressing'
 const MOTIVE_PREFIX = '@@MOTIVE'
 const FUNCOBJ_EFFECT_KEY = 'effect'
@@ -25,6 +23,9 @@ const DEFAULT_HANDLERS = {
  *
  * @constructor
  * @param {Object<>} configuration
+ * @param {Object<>} [configuration.config]
+ * @param {Object<>} [configuration.sync]
+ * @param {Object<>} [configuration.async]
  * @return {Object<>}
  */
 function ReduxMotive (configuration) {
@@ -32,85 +33,97 @@ function ReduxMotive (configuration) {
     return new ReduxMotive(configuration)
   }
 
-  const config = configuration.config
+  const { config = {}, sync: syncMotives, async: asyncMotives } = configuration;
+  if (!(syncMotives || asyncMotives)) {
+    throw new Error('Expected props \'sync\' or \'async\' to be defined for the Motive.');
+  }
   const actionCreators = {}
   const reducersMap = {}
   const PREFIX = intentPrefix(config.prefix || '')
   const defaultHandlers = (config && config.handlers) || DEFAULT_HANDLERS
   const bindAsMotive = memoizeFirst(constructEffectMotive)
 
-  const IGNORED_KEYS = ['config']
-  function loopMotiveConfiguration (funcName) {
-    if (IGNORED_KEYS.includes(funcName)) return
+  function extractActionCreatorAndReducerFromSyncMotive (syncMotiveKey) {
+    const ACTION_TYPE = `${PREFIX}/${snakeCase(syncMotiveKey)}`
+    const syncMotiveFunc = syncMotives[syncMotiveKey];
 
-    const ACTION_TYPE = `${PREFIX}/${snakeCase(funcName)}`
-    let func = configuration[funcName]
-    let ourHandlers = defaultHandlers
-    const hitAsyncConfig = !!func[FUNCOBJ_EFFECT_KEY]
-    if (hitAsyncConfig) {
-      ourHandlers = func.handlers || ourHandlers
-      func = func[FUNCOBJ_EFFECT_KEY]
+    function syncMotiveActionCreator () {
+      return createMotiveAction(ACTION_TYPE, {
+        [META_MOTIVE_ARGS]: [...arguments]
+      })
+    }
+    syncMotiveActionCreator.ACTION_TYPE = ACTION_TYPE
+
+    function syncMotiveReducer (state, action) {
+      return syncMotiveFunc(state, ...action.meta[META_MOTIVE_ARGS])
     }
 
-    if (hitAsyncConfig || isAsyncFunc(func)) {
-      const TYPE_START = `${ACTION_TYPE}/${HANDLER_SUFFIXES.START}`
-      const TYPE_END = `${ACTION_TYPE}/${HANDLER_SUFFIXES.END}`
-      const TYPE_ERROR = `${ACTION_TYPE}/${HANDLER_SUFFIXES.ERROR}`
-
-      function asyncMotiveActionCreator () {
-        const args = [...arguments]
-        return function asyncMotiveThunk (dispatch, getState) {
-          const meta = {
-            [META_MOTIVE_ARGS]: args
-          }
-
-          dispatch(createAsyncAction(TYPE_START, meta))
-
-          const boundMotive = bindAsMotive(actionCreators, dispatch, getState)
-          const asyncAction = func(boundMotive, ...args)
-          asyncAction.then(() => {
-            dispatch(createAsyncAction(TYPE_END, meta))
-          })
-          asyncAction.catch(err => {
-            dispatch(createAsyncAction(TYPE_ERROR, meta, err))
-          })
-        }
-      }
-      asyncMotiveActionCreator.ACTION_TYPE_START = TYPE_START
-      asyncMotiveActionCreator.ACTION_TYPE_END = TYPE_END
-      asyncMotiveActionCreator.ACTION_TYPE_ERROR = TYPE_ERROR
-      actionCreators[funcName] = asyncMotiveActionCreator
-
-      reducersMap[TYPE_START] = (state, action) => {
-        return ourHandlers.start(state, ...action.meta[META_MOTIVE_ARGS])
-      }
-      reducersMap[TYPE_END] = (state, action) => {
-        return ourHandlers.end(state, ...action.meta[META_MOTIVE_ARGS])
-      }
-      reducersMap[TYPE_ERROR] = (state, action) => {
-        return ourHandlers.error(
-          state,
-          action.payload,
-          ...action.meta[META_MOTIVE_ARGS]
-        )
-      }
-    } else {
-      function syncMotiveActionCreator () {
-        return createMotiveAction(ACTION_TYPE, {
-          [META_MOTIVE_ARGS]: [...arguments]
-        })
-      }
-      syncMotiveActionCreator.ACTION_TYPE = ACTION_TYPE
-      actionCreators[funcName] = syncMotiveActionCreator
-
-      function syncMotiveReducer (state, action) {
-        return func(state, ...action.meta[META_MOTIVE_ARGS])
-      }
-      reducersMap[ACTION_TYPE] = syncMotiveReducer
-    }
+    actionCreators[syncMotiveKey] = syncMotiveActionCreator
+    reducersMap[ACTION_TYPE] = syncMotiveReducer
   }
 
-  Object.keys(configuration).forEach(loopMotiveConfiguration)
+  function extractActionCreatorsAndReducerFromAsyncMotive (asyncMotiveKey) {
+    const ACTION_TYPE = `${PREFIX}/${snakeCase(asyncMotiveKey)}`
+    const ACTION_TYPE_START = `${ACTION_TYPE}/${HANDLER_SUFFIXES.START}`
+    const ACTION_TYPE_END = `${ACTION_TYPE}/${HANDLER_SUFFIXES.END}`
+    const ACTION_TYPE_ERROR = `${ACTION_TYPE}/${HANDLER_SUFFIXES.ERROR}`
+    const asyncMotiveConfig = asyncMotives[asyncMotiveKey];
+    let asyncMotiveFunc;
+    let asyncMotiveHandlers = defaultHandlers
+    const hitAsyncConfig = !(asyncMotiveConfig instanceof Function);
+    if (hitAsyncConfig) {
+      asyncMotiveHandlers = asyncMotiveConfig.handlers || asyncMotiveHandlers
+      asyncMotiveFunc = asyncMotiveConfig[FUNCOBJ_EFFECT_KEY]
+    } else {
+      asyncMotiveFunc = asyncMotiveConfig;
+    }
+
+    function asyncMotiveActionCreator () {
+      const args = [...arguments]
+      return function asyncMotiveThunk (dispatch, getState) {
+        const meta = {
+          [META_MOTIVE_ARGS]: args
+        }
+
+        dispatch(createAsyncAction(ACTION_TYPE_START, meta))
+
+        const boundMotive = bindAsMotive(actionCreators, dispatch, getState)
+        const asyncAction = asyncMotiveFunc(boundMotive, ...args)
+        asyncAction.then(() => {
+          dispatch(createAsyncAction(ACTION_TYPE_END, meta))
+        })
+        asyncAction.catch(err => {
+          dispatch(createAsyncAction(ACTION_TYPE_ERROR, meta, err))
+        })
+      }
+    }
+    asyncMotiveActionCreator.ACTION_TYPE_START = ACTION_TYPE_START
+    asyncMotiveActionCreator.ACTION_TYPE_END = ACTION_TYPE_END
+    asyncMotiveActionCreator.ACTION_TYPE_ERROR = ACTION_TYPE_ERROR
+
+    const asyncMotiveReducers = {
+      [ACTION_TYPE_START]: (state, action) =>
+        asyncMotiveHandlers.start(state, ...action.meta[META_MOTIVE_ARGS]),
+      [ACTION_TYPE_END]: (state, action) =>
+      asyncMotiveHandlers.end(state, ...action.meta[META_MOTIVE_ARGS]),
+      [ACTION_TYPE_ERROR]: (state, action) =>
+      asyncMotiveHandlers.error(
+        state,
+        action.payload,
+        ...action.meta[META_MOTIVE_ARGS]
+      )
+    }
+
+    actionCreators[asyncMotiveKey] = asyncMotiveActionCreator
+    reducersMap[ACTION_TYPE_START] = asyncMotiveReducers[ACTION_TYPE_START]
+    reducersMap[ACTION_TYPE_END] = asyncMotiveReducers[ACTION_TYPE_END]
+    reducersMap[ACTION_TYPE_ERROR] = asyncMotiveReducers[ACTION_TYPE_ERROR]
+  }
+
+  syncMotives && Object.keys(syncMotives)
+    .forEach(extractActionCreatorAndReducerFromSyncMotive)
+  asyncMotives && Object.keys(asyncMotives)
+    .forEach(extractActionCreatorsAndReducerFromAsyncMotive)
 
   function motiveReducer (state = config.initialState, action) {
     return reducersMap[action.type]
