@@ -17,15 +17,19 @@
     "build:modules": "rollup -c support/rollup.modules.config.js",
     "prettier": "prettier-standard 'src/**/*.js' 'support/*.js'",
     "test": "jest",
-    "test:watch": "jest --watchAll"
+    "test:watch": "jest --watchAll",
+    "lint:staged": "lint-staged",
+    "precommit": "npm run lint:staged"
   },
   "dependencies": {},
   "devDependencies": {
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-env": "^1.2.2",
     "babelrc-rollup": "^3.0.0",
+    "husky": "^0.13.3",
     "jest": "^19.0.2",
     "jest-babel": "^1.0.1",
+    "lint-staged": "^3.4.0",
     "prettier-standard": "^4.0.0",
     "redux": "^3.6.0",
     "redux-thunk": "^2.2.0",
@@ -45,13 +49,8 @@
     "collectCoverage": true
   },
   "lint-staged": {
-    "gitDir": "../",
     "linters": {
-      "src/**/*.js": [
-        "prettier-standard",
-        "git add"
-      ],
-      "support/**/*.js": [
+      "{src,support}/**/*.js": [
         "prettier-standard",
         "git add"
       ]

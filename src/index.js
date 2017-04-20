@@ -33,9 +33,11 @@ function ReduxMotive (configuration) {
     return new ReduxMotive(configuration)
   }
 
-  const { config = {}, sync: syncMotives, async: asyncMotives } = configuration;
+  const {config = {}, sync: syncMotives, async: asyncMotives} = configuration
   if (!(syncMotives || asyncMotives)) {
-    throw new Error('Expected props \'sync\' or \'async\' to be defined for the Motive.');
+    throw new Error(
+      "Expected props 'sync' or 'async' to be defined for the Motive."
+    )
   }
   const actionCreators = {}
   const reducersMap = {}
@@ -45,7 +47,7 @@ function ReduxMotive (configuration) {
 
   function extractActionCreatorAndReducerFromSyncMotive (syncMotiveKey) {
     const ACTION_TYPE = `${PREFIX}/${snakeCase(syncMotiveKey)}`
-    const syncMotiveFunc = syncMotives[syncMotiveKey];
+    const syncMotiveFunc = syncMotives[syncMotiveKey]
 
     function syncMotiveActionCreator () {
       return createMotiveAction(ACTION_TYPE, {
@@ -67,15 +69,15 @@ function ReduxMotive (configuration) {
     const ACTION_TYPE_START = `${ACTION_TYPE}/${HANDLER_SUFFIXES.START}`
     const ACTION_TYPE_END = `${ACTION_TYPE}/${HANDLER_SUFFIXES.END}`
     const ACTION_TYPE_ERROR = `${ACTION_TYPE}/${HANDLER_SUFFIXES.ERROR}`
-    const asyncMotiveConfig = asyncMotives[asyncMotiveKey];
-    let asyncMotiveFunc;
+    const asyncMotiveConfig = asyncMotives[asyncMotiveKey]
+    let asyncMotiveFunc
     let asyncMotiveHandlers = defaultHandlers
-    const hitAsyncConfig = !(asyncMotiveConfig instanceof Function);
+    const hitAsyncConfig = !(asyncMotiveConfig instanceof Function)
     if (hitAsyncConfig) {
       asyncMotiveHandlers = asyncMotiveConfig.handlers || asyncMotiveHandlers
       asyncMotiveFunc = asyncMotiveConfig[FUNCOBJ_EFFECT_KEY]
     } else {
-      asyncMotiveFunc = asyncMotiveConfig;
+      asyncMotiveFunc = asyncMotiveConfig
     }
 
     function asyncMotiveActionCreator () {
@@ -105,13 +107,13 @@ function ReduxMotive (configuration) {
       [ACTION_TYPE_START]: (state, action) =>
         asyncMotiveHandlers.start(state, ...action.meta[META_MOTIVE_ARGS]),
       [ACTION_TYPE_END]: (state, action) =>
-      asyncMotiveHandlers.end(state, ...action.meta[META_MOTIVE_ARGS]),
+        asyncMotiveHandlers.end(state, ...action.meta[META_MOTIVE_ARGS]),
       [ACTION_TYPE_ERROR]: (state, action) =>
-      asyncMotiveHandlers.error(
-        state,
-        action.payload,
-        ...action.meta[META_MOTIVE_ARGS]
-      )
+        asyncMotiveHandlers.error(
+          state,
+          action.payload,
+          ...action.meta[META_MOTIVE_ARGS]
+        )
     }
 
     actionCreators[asyncMotiveKey] = asyncMotiveActionCreator
@@ -120,10 +122,14 @@ function ReduxMotive (configuration) {
     reducersMap[ACTION_TYPE_ERROR] = asyncMotiveReducers[ACTION_TYPE_ERROR]
   }
 
-  syncMotives && Object.keys(syncMotives)
-    .forEach(extractActionCreatorAndReducerFromSyncMotive)
-  asyncMotives && Object.keys(asyncMotives)
-    .forEach(extractActionCreatorsAndReducerFromAsyncMotive)
+  syncMotives &&
+    Object.keys(syncMotives).forEach(
+      extractActionCreatorAndReducerFromSyncMotive
+    )
+  asyncMotives &&
+    Object.keys(asyncMotives).forEach(
+      extractActionCreatorsAndReducerFromAsyncMotive
+    )
 
   function motiveReducer (state = config.initialState, action) {
     return reducersMap[action.type]

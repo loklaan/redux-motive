@@ -14,7 +14,7 @@ describe('ReduxMotive', () => {
     it('should construct a motive', () => {
       expect(() => {
         const motive = new ReduxMotive({
-          sync: { foo () {} }
+          sync: {foo () {}}
         })
         expect(motive).toMatchSnapshot()
         expect(motive.reducer).toMatchSnapshot()
@@ -35,7 +35,7 @@ describe('ReduxMotive', () => {
             Object.assign({}, state, {
               rainDepth: depthInMM
             })
-        },
+        }
       })
 
       const store = createStore(motive.reducer, applyMiddleware(thunk))
