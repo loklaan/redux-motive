@@ -27,8 +27,6 @@ const { reducer, ...actionCreators } = ReduxMotive({
 })
 ```
 
-> **Note: API reflects the above example, while the rest of the readme may be out-of-date.**
-
 ## Install
 
 ```shell
@@ -61,19 +59,22 @@ Motive removes indirection, by combining the purpose of a data-flow function to 
 
 ## Comparison
 
-Generate action creators and a reducer with **`ReduxMotive`**.
+Generate action creators and a reducer with **Motive**.
 ```js
 const { reducer, ...actionCreators } = ReduxMotive({
-  // Sync function, combines Action Creator and Reducer
-  addTodo (state, todo) {
-    return assign({}, state, { todos: [ ...state.todos, todo ] })
+  sync: {
+    // Sync function, combines Action Creator and Reducer
+    addTodo (state, todo) {
+      return assign({}, state, { todos: [ ...state.todos, todo ] })
+    },
   },
-
-  // Async function, combines Action Creator and Effect
-  async createTodo (motive, text, isDone) {
-    const todo = await api('/todo', {text, isDone})
-    motive.addTodo(todo)
-  }
+  async: {
+    // Async function, combines Action Creator and Effect
+    async createTodo (motive, text, isDone) {
+      const todo = await api('/todo', {text, isDone})
+      motive.addTodo(todo)
+    }
+  },
 })
 ```
 
@@ -122,9 +123,9 @@ const actionCreators = {
 
 Inferring common redux patterns into `ReduxMotive` allows for _less_ coding.
 
-* Action Creators often pass all of their params into an Action payload; `ReduxMotive` always does behind the scenes.
+* Action Creators often pass their params to Reducers in the Action; `ReduxMotive` always does behind the scenes.
 * The progress of an effect's _lifecycle_ in `ReduxMotive` is reduced to state at common stages: _start, end or error_.
-* The first param of an effect function is an Object of `dispatch`-bound Action Creators generated from the current Motive, making dispatching actions from inside effects simple.
+* Dispatching actions from the end of effects is guaranteed; `ReduxMotive` provides `dispatch`-bound Action Creators in an effect's first parameter.
 
 ## API
 
@@ -175,8 +176,10 @@ Should return the new state.
 
 ```js
 const { todo } = ReduxMotive({
-  todo (state, isDone) {
-    return assign({}, state, { isDone })
+  sync: {
+    todo (state, isDone) {
+      return assign({}, state, { isDone })
+    }
   }
 })
 
@@ -190,9 +193,11 @@ dispatch( todo(true) )
 
 > _Combination of an Action Creator and an **Effect**._
 
-Function that is given a **`motive`** Object any additional arguments from the generated Action Creator.
+Function that is given a **`motive`** Object and any additional arguments from the generated Action Creator.
 
-Should invoke side effects and other Action Creators. Doesn't return new state.
+Expected to dispatch new Actions from invoke side effects (like server API calls).
+
+Should return a Promise. The `async` function keyword can be used.
 
 **`motive`** Object  
 * `dispatch`
@@ -207,9 +212,11 @@ Should invoke side effects and other Action Creators. Doesn't return new state.
 ReduxMotive({
   // ...
 
-  async syncTodo (motive) {
-    const todo = await api();
-    motive.todo(todo.isDone)
+  async: {
+    async syncTodo (motive) {
+      const todo = await api();
+      motive.todo(todo.isDone)
+    }
   }
 })
 ```
@@ -231,15 +238,21 @@ The stages can be overridden:
 
 ```js
 ReduxMotive({
-  syncTodo: {
-    handlers: {
-      start (start) { /* ... */ },
-      end (start) { /* ... */ },
-      error (start) { /* ... */ }
-    },
-    async effect (motive) {
-      const todo = await api();
-      motive.todo(todo.isDone)
+  config: {
+    handlers: { /* ... */ }
+  },
+
+  async: {
+    syncTodo: {
+      handlers: {
+        start (state) { /* ... */ },
+        end (state) { /* ... */ },
+        error (state) { /* ... */ }
+      },
+      async effect (motive) {
+        const todo = await api();
+        motive.todo(todo.isDone)
+      }
     }
   }
 })
@@ -252,8 +265,12 @@ ReduxMotive({
 
 ```js
 const motive = ReduxMotive({
-  todo () {},
-  async syncTodo () {}
+  sync: {
+    todo () {},
+  },
+  async: {
+    async syncTodo () {}
+  }
 });
 
 console.log(motive);
@@ -266,7 +283,7 @@ console.log(motive);
 
 #### Action Types
 
-Action types are attaches as properties to generated Action Creators.
+Action types are attached as properties to generated Action Creators.
 
 <details>
 <summary>Example</summary>
