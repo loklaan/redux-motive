@@ -1,6 +1,6 @@
 {
   "name": "redux-motive",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Simplify writing action creators, reducers and effects - without breaking redux.",
   "main": "dist/redux-motive.js",
   "module": "dist/redux-motive.es.js",
