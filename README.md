@@ -269,7 +269,7 @@ const motive = ReduxMotive({
     todo () {},
   },
   async: {
-    async syncTodo () {}
+    async fetchTodo () {}
   }
 });
 
