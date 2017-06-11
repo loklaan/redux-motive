@@ -9,10 +9,10 @@ const HANDLER_SUFFIXES = {
   ERROR: 'ERROR'
 }
 const DEFAULT_HANDLERS = {
-  start: state => Object.assign({}, state, {[PROGRESS_STATE_PROP]: true}),
-  end: state => Object.assign({}, state, {[PROGRESS_STATE_PROP]: false}),
+  start: state => Object.assign({}, state, { [PROGRESS_STATE_PROP]: true }),
+  end: state => Object.assign({}, state, { [PROGRESS_STATE_PROP]: false }),
   error: (state, error) =>
-    Object.assign({}, state, {[PROGRESS_STATE_PROP]: false, error})
+    Object.assign({}, state, { [PROGRESS_STATE_PROP]: false, error })
 }
 
 /**
@@ -33,7 +33,7 @@ function ReduxMotive (configuration) {
     return new ReduxMotive(configuration)
   }
 
-  const {config = {}, sync: syncMotives, async: asyncMotives} = configuration
+  const { config = {}, sync: syncMotives, async: asyncMotives } = configuration
   if (!(syncMotives || asyncMotives)) {
     throw new Error(
       "Expected props 'sync' or 'async' to be defined for the Motive."
@@ -138,7 +138,7 @@ function ReduxMotive (configuration) {
   }
 
   const motive = Object.assign({}, actionCreators)
-  Object.defineProperty(motive, 'reducer', {value: motiveReducer})
+  Object.defineProperty(motive, 'reducer', { value: motiveReducer })
   return motive
 }
 
@@ -156,7 +156,7 @@ function intentPrefix (name) {
 }
 
 function createMotiveAction (type, meta, payload) {
-  const action = {type, meta}
+  const action = { type, meta }
   if (payload) action.payload = payload
   return action
 }
@@ -179,8 +179,8 @@ function memoizeFirst (func) {
 
 function constructEffectMotive (actionCreators, dispatch, getState) {
   const motive = {}
-  Object.defineProperty(motive, 'dispatch', {value: dispatch})
-  Object.defineProperty(motive, 'getState', {value: getState})
+  Object.defineProperty(motive, 'dispatch', { value: dispatch })
+  Object.defineProperty(motive, 'getState', { value: getState })
   return bindDispatchToActionCreators(motive, actionCreators, dispatch)
 }
 

@@ -1,6 +1,6 @@
 import regeneratorRuntime from 'regenerator-runtime'
 import ReduxMotive from '../'
-import {createStore, applyMiddleware} from 'redux'
+import { createStore, applyMiddleware } from 'redux'
 import thunk from 'redux-thunk'
 
 describe('ReduxMotive', () => {
@@ -14,7 +14,7 @@ describe('ReduxMotive', () => {
     it('should construct a motive', () => {
       expect(() => {
         const motive = new ReduxMotive({
-          sync: {foo () {}}
+          sync: { foo () {} }
         })
         expect(motive).toMatchSnapshot()
         expect(motive.reducer).toMatchSnapshot()

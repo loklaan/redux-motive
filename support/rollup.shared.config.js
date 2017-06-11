@@ -14,6 +14,6 @@ export const commonPlugins = [
   }),
   commonjs(),
   babel(babelrc()),
-  cleanup({sourceType: 'module', maxEmptyLines: 0}),
+  cleanup({ sourceType: 'module', maxEmptyLines: 0 }),
   filesize()
 ]

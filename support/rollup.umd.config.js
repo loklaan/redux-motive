@@ -1,4 +1,4 @@
-import {pkg, commonPlugins} from './rollup.shared.config'
+import { pkg, commonPlugins } from './rollup.shared.config'
 import minify from 'rollup-plugin-uglify'
 
 export default {
