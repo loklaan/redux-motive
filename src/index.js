@@ -9,10 +9,10 @@ const HANDLER_SUFFIXES = {
   ERROR: 'ERROR'
 }
 const DEFAULT_HANDLERS = {
-  start: state => Object.assign({}, state, {[PROGRESS_STATE_PROP]: true}),
-  end: state => Object.assign({}, state, {[PROGRESS_STATE_PROP]: false}),
+  start: state => Object.assign({}, state, { [PROGRESS_STATE_PROP]: true }),
+  end: state => Object.assign({}, state, { [PROGRESS_STATE_PROP]: false }),
   error: (state, error) =>
-    Object.assign({}, state, {[PROGRESS_STATE_PROP]: false, error})
+    Object.assign({}, state, { [PROGRESS_STATE_PROP]: false, error })
 }
 
 /**
@@ -33,7 +33,7 @@ function ReduxMotive (configuration) {
     return new ReduxMotive(configuration)
   }
 
-  const {config = {}, sync: syncMotives, async: asyncMotives} = configuration
+  const { config = {}, sync: syncMotives, async: asyncMotives } = configuration
   if (!(syncMotives || asyncMotives)) {
     throw new Error(
       "Expected props 'sync' or 'async' to be defined for the Motive."
@@ -82,6 +82,11 @@ function ReduxMotive (configuration) {
 
     function asyncMotiveActionCreator () {
       const args = [...arguments]
+      let promise
+      if (args[0] instanceof MotivePromise) {
+        promise = args[0]
+        args.splice(0, 1)
+      }
       return function asyncMotiveThunk (dispatch, getState) {
         const meta = {
           [META_MOTIVE_ARGS]: args
@@ -89,7 +94,12 @@ function ReduxMotive (configuration) {
 
         dispatch(createAsyncAction(ACTION_TYPE_START, meta))
 
-        const boundMotive = bindAsMotive(actionCreators, dispatch, getState)
+        const boundMotive = bindAsMotive(
+          actionCreators,
+          dispatch,
+          getState,
+          promise
+        )
         const asyncAction = asyncMotiveFunc(boundMotive, ...args)
         asyncAction.then(() => {
           dispatch(createAsyncAction(ACTION_TYPE_END, meta))
@@ -138,7 +148,7 @@ function ReduxMotive (configuration) {
   }
 
   const motive = Object.assign({}, actionCreators)
-  Object.defineProperty(motive, 'reducer', {value: motiveReducer})
+  Object.defineProperty(motive, 'reducer', { value: motiveReducer })
   return motive
 }
 
@@ -156,7 +166,7 @@ function intentPrefix (name) {
 }
 
 function createMotiveAction (type, meta, payload) {
-  const action = {type, meta}
+  const action = { type, meta }
   if (payload) action.payload = payload
   return action
 }
@@ -177,11 +187,12 @@ function memoizeFirst (func) {
   }
 }
 
-function constructEffectMotive (actionCreators, dispatch, getState) {
+function constructEffectMotive (actionCreators, dispatch, getState, promise) {
   const motive = {}
-  Object.defineProperty(motive, 'dispatch', {value: dispatch})
-  Object.defineProperty(motive, 'getState', {value: getState})
-  return bindDispatchToActionCreators(motive, actionCreators, dispatch)
+  Object.defineProperty(motive, 'dispatch', { value: dispatch })
+  Object.defineProperty(motive, 'getState', { value: getState })
+  Object.defineProperty(motive, 'promise', { value: promise })
+  return bindDispatchToActionCreators(motive, actionCreators, dispatch, promise)
 }
 
 function bindDispatchToActionCreator (func, dispatch) {
@@ -198,4 +209,23 @@ function bindDispatchToActionCreators (target, actionCreators, dispatch) {
     )
     return target
   }, target)
+}
+
+export function MotivePromise (promiseResolve, promiseReject) {
+  this.resolve = withData => {
+    return promiseResolve(withData)
+  }
+
+  this.reject = withError => {
+    return promiseReject(withError)
+  }
+
+  return this
+}
+
+export function asyncDispatch (dispatch, motiveActionCreator, ...args) {
+  return new Promise((resolve, reject) => {
+    const motivePromise = new MotivePromise(resolve, reject)
+    dispatch(motiveActionCreator(motivePromise, ...args))
+  })
 }

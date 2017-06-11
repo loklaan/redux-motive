@@ -1,6 +1,6 @@
 import regeneratorRuntime from 'regenerator-runtime'
-import ReduxMotive from '../'
-import {createStore, applyMiddleware} from 'redux'
+import ReduxMotive, { asyncDispatch, MotivePromise } from '../'
+import { createStore, applyMiddleware } from 'redux'
 import thunk from 'redux-thunk'
 
 describe('ReduxMotive', () => {
@@ -14,7 +14,7 @@ describe('ReduxMotive', () => {
     it('should construct a motive', () => {
       expect(() => {
         const motive = new ReduxMotive({
-          sync: {foo () {}}
+          sync: { foo () {} }
         })
         expect(motive).toMatchSnapshot()
         expect(motive.reducer).toMatchSnapshot()
@@ -273,6 +273,50 @@ describe('ReduxMotive', () => {
           done()
         }
       }, 0)
+    })
+  })
+
+  describe('promise handling', () => {
+    it('MotivePromise should be a valid function', () => {
+      const promise = new MotivePromise(() => true, () => false)
+      expect(promise.resolve instanceof Function).toBe(true)
+      expect(promise.resolve()).toBe(true)
+      expect(promise.reject()).toBe(false)
+    })
+
+    it('MotivePromise should be able to resolve provided promise', done => {
+      const promise = new Promise((resolve, reject) => {
+        const motivePromise = new MotivePromise(resolve, reject)
+        expect(motivePromise.resolve instanceof Function).toBe(true)
+        motivePromise.resolve()
+      })
+      promise.then(done)
+    })
+
+    it('should return promise when using asyncDispatch to dispatch action', done => {
+      let store = null
+      const motive = ReduxMotive({
+        config: {
+          prefix: 'test',
+          initialState: {}
+        },
+
+        async: {
+          motivePromise: {
+            async effect (motive, promise) {
+              motive.promise.resolve()
+            }
+          }
+        }
+      })
+
+      store = createStore(motive.reducer, applyMiddleware(thunk))
+      expect(motive.motivePromise instanceof Function).toBe(true)
+      expect(asyncDispatch instanceof Function).toBe(true)
+
+      const myPromise = asyncDispatch(store.dispatch, motive.motivePromise)
+      expect(myPromise instanceof Promise).toBe(true)
+      myPromise.then(done).catch(done.fail)
     })
   })
 })
