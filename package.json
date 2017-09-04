@@ -29,7 +29,7 @@
     "husky": "^0.13.3",
     "jest": "^20.0.0",
     "jest-babel": "^1.0.1",
-    "lint-staged": "^3.4.0",
+    "lint-staged": "^4.1.0",
     "prettier-standard": "^5.0.0",
     "redux": "^3.6.0",
     "redux-thunk": "^2.2.0",
