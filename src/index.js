@@ -90,13 +90,13 @@ function ReduxMotive (configuration) {
         dispatch(createAsyncAction(ACTION_TYPE_START, meta))
 
         const boundMotive = bindAsMotive(actionCreators, dispatch, getState)
-        const asyncAction = asyncMotiveFunc(boundMotive, ...args)
-        asyncAction.then(() => {
-          dispatch(createAsyncAction(ACTION_TYPE_END, meta))
-        })
-        asyncAction.catch(err => {
-          dispatch(createAsyncAction(ACTION_TYPE_ERROR, meta, err))
-        })
+        asyncMotiveFunc(boundMotive, ...args)
+          .then(() => {
+            dispatch(createAsyncAction(ACTION_TYPE_END, meta))
+          })
+          .catch(err => {
+            dispatch(createAsyncAction(ACTION_TYPE_ERROR, meta, err))
+          })
       }
     }
     asyncMotiveActionCreator.ACTION_TYPE_START = ACTION_TYPE_START

@@ -1,17 +1,22 @@
-import { pkg, external, commonPlugins } from './rollup.shared.config'
+import {
+  pkg,
+  external,
+  commonPlugins,
+  reportingPlugins
+} from './rollup.shared.config'
 
 export default {
-  entry: 'src/index.js',
-  plugins: commonPlugins,
+  input: 'src/index.js',
+  plugins: [...commonPlugins, ...reportingPlugins],
   external: external,
-  targets: [
+  output: [
     {
-      dest: pkg.main,
+      file: pkg.main,
       format: 'cjs',
       sourceMap: true
     },
     {
-      dest: pkg.module,
+      file: pkg.module,
       format: 'es',
       sourceMap: true
     }

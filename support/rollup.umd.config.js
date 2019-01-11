@@ -1,19 +1,13 @@
-import { pkg, commonPlugins } from './rollup.shared.config'
-import minify from 'rollup-plugin-uglify'
+import { pkg, commonPlugins, reportingPlugins } from './rollup.shared.config'
+import { uglify } from 'rollup-plugin-uglify'
 
 export default {
-  entry: 'src/index.js',
-  plugins: [
-    ...commonPlugins.slice(0, commonPlugins.length - 1),
-    minify(),
-    commonPlugins[commonPlugins.length - 1]
-  ],
-  targets: [
-    {
-      dest: pkg.umd,
-      format: 'umd',
-      sourceMap: true,
-      moduleName: 'ReduxMotive'
-    }
-  ]
+  input: 'src/index.js',
+  plugins: [...commonPlugins, uglify(), ...reportingPlugins],
+  output: {
+    file: pkg.umd,
+    format: 'umd',
+    sourceMap: true,
+    name: 'ReduxMotive'
+  }
 }

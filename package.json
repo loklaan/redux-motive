@@ -9,37 +9,38 @@
     "dist"
   ],
   "scripts": {
-    "prepublish": "npm run test && npm run build",
+    "prepublishOnly": "npm run test && npm run build",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "build": "npm run build:modules && npm run build:umd",
-    "build:umd": "rollup -c support/rollup.umd.config.js",
-    "build:modules": "rollup -c support/rollup.modules.config.js",
+    "build:umd": "cross-env NODE_ENV=production rollup -c support/rollup.umd.config.js",
+    "build:modules": "cross-env NODE_ENV=production rollup -c support/rollup.modules.config.js",
     "prettier": "prettier-standard 'src/**/*.js' 'support/*.js'",
-    "test": "jest",
+    "test": "cross-env NODE_ENV=test jest",
     "test:watch": "jest --watchAll",
-    "lint:staged": "lint-staged",
-    "precommit": "npm run lint:staged"
+    "lint:staged": "lint-staged"
   },
   "dependencies": {},
   "devDependencies": {
-    "babel-plugin-external-helpers": "^6.22.0",
-    "babel-preset-env": "^1.2.2",
-    "babelrc-rollup": "^3.0.0",
-    "husky": "^0.13.3",
-    "jest": "^20.0.0",
-    "jest-babel": "^1.0.1",
-    "lint-staged": "^3.4.0",
-    "prettier-standard": "^5.0.0",
-    "redux": "^3.6.0",
-    "redux-thunk": "^2.2.0",
-    "rollup": "^0.41.6",
-    "rollup-plugin-babel": "^2.7.1",
-    "rollup-plugin-cleanup": "^1.0.0",
-    "rollup-plugin-commonjs": "^8.0.2",
-    "rollup-plugin-filesize": "^1.2.1",
-    "rollup-plugin-node-resolve": "^3.0.0",
-    "rollup-plugin-uglify": "^2.0.0"
+    "@babel/core": "^7.2.2",
+    "@babel/plugin-external-helpers": "^7.2.0",
+    "@babel/preset-env": "^7.2.3",
+    "babel-core": "^7.0.0-bridge.0",
+    "babel-jest": "^23.6.0",
+    "cross-env": "^5.2.0",
+    "husky": "^1.3.1",
+    "jest": "^23.6.0",
+    "lint-staged": "^8.1.0",
+    "prettier-standard": "^8.0.1",
+    "redux": "^4.0.1",
+    "redux-thunk": "^2.3.0",
+    "rollup": "^1.1.0",
+    "rollup-plugin-babel": "^5.0.0-alpha.0",
+    "rollup-plugin-cleanup": "^3.1.0",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-filesize": "^6.0.0",
+    "rollup-plugin-node-resolve": "^4.0.0",
+    "rollup-plugin-uglify": "^6.0.0"
   },
   "author": "Lochlan Bunn <bunn@lochlan.io>",
   "license": "MIT",
@@ -48,11 +49,19 @@
     "coverageDirectory": "./coverage/",
     "collectCoverage": true
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint:staged"
+    }
+  },
   "lint-staged": {
     "linters": {
       "{src,support}/**/*.js": [
         "prettier-standard",
         "git add"
+      ],
+      "src/**/*.js": [
+        "cross-env NODE_ENV=test jest --bail --findRelatedTests"
       ]
     }
   }
