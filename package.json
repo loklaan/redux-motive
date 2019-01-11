@@ -2,6 +2,7 @@
   "name": "redux-motive",
   "version": "0.3.2",
   "description": "Simplify writing action creators, reducers and effects - without breaking redux.",
+  "keywords": ["redux", "thunk", "action", "reducer", "side effects"],
   "main": "dist/redux-motive.js",
   "module": "dist/redux-motive.es.js",
   "umd": "dist/redux-motive.umd.js",
