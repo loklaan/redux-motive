@@ -129,19 +129,38 @@ Inferring common redux patterns into `ReduxMotive` allows for _less_ coding.
 
 ## API
 
-### *`ReduxMotive( configuration )`*
+### *`ReduxMotive( { config, sync, async } )`*
 
-### `configuration` parameter
+The returned object can be used to provide a `reducer` to the Redux.
 
-An Object comprised of functions, with a single reserved key: `config`.
+Additionally, every function configured for `sync` and `async` are accessible as dispatchable Action Creators.
 
-#### `config`
+```js
+const motive = ReduxMotive({
+  config: {}
+  sync: {
+    todo () {},
+  },
+  async: {
+    async fetchTodo () {}
+  }
+});
 
-Define initial state, default handlers for state/end/error, and optional prefix for action types.
+console.log(motive);
+// {
+//   reducer,               Reducer function, wrapping all configured sync fns
+//   todo,                  An Action Creator generated from sync.todo
+//   fetchTodo              An Action Creator generated from async.fetchTodo
+// }
+```
+
+#### Configuring
 
 <details>
-<summary>Config Example</summary>
+<summary><strong># <code>config</code></strong></summary>
   <p>
+
+> _Initial state, default handlers for state/end/error, and optional prefix for action types._
 
 ```js
 
@@ -162,23 +181,22 @@ ReduxMotive({
   </p>
 </details>
 
-#### Synchronous Function
-
-> _Combination of an Action Creator and a **Reducer**._
-
-Function that is given the current state and any additional arguments from the generated Action Creator.
-
-Should return the new state.
-
 <details>
-<summary>Synchronous Example</summary>
+<summary><strong># <code>sync</code></strong></summary>
   <p>
+
+
+> _A collection of functions that combine the principles of an Action Creator and a **Reducer**._
+
+They should:
+1. Always return new state
+2. Should not call any "side effects"
 
 ```js
 const { todo } = ReduxMotive({
   sync: {
     todo (state, isDone) {
-      return assign({}, state, { isDone })
+      return { ...state, isDone }
     }
   }
 })
@@ -189,7 +207,9 @@ dispatch( todo(true) )
   </p>
 </details>
 
-#### Asynchronous Function
+<details>
+<summary><strong># <code>async</code></strong></summary>
+  <p>
 
 > _Combination of an Action Creator and an **Effect**._
 
@@ -204,16 +224,12 @@ Should return a Promise. The `async` function keyword can be used.
 * `getState`
 * Action Creators returned by `ReduxMotive`, bound to `dispatch`
 
-<details>
-<summary>Asynchronous Example</summary>
-  <p>
-
 ```js
 ReduxMotive({
   // ...
 
   async: {
-    async syncTodo (motive) {
+    async fetchTodo (motive) {
       const todo = await api();
       motive.todo(todo.isDone)
     }
@@ -221,20 +237,13 @@ ReduxMotive({
 })
 ```
 
-  </p>
-</details>
-
-#### Asynchronous Function 'lifecycle' stages
+**Lifecycles for an Async Function**
 
 Refer to the [Comparison](#comparison) for when 'lifecycle' stages are actioned and reduced.
 
 The stages can be overridden:  
 * In the `config`
 * Per (asynchronous) function
-
-<details>
-<summary>Override Handles Example</summary>
-  <p>
 
 ```js
 ReduxMotive({
@@ -243,7 +252,7 @@ ReduxMotive({
   },
 
   async: {
-    syncTodo: {
+    fetchTodo: {
       handlers: {
         start (state) { /* ... */ },
         end (state) { /* ... */ },
@@ -261,48 +270,23 @@ ReduxMotive({
   </p>
 </details>
 
-### Return
-
-```js
-const motive = ReduxMotive({
-  sync: {
-    todo () {},
-  },
-  async: {
-    async fetchTodo () {}
-  }
-});
-
-console.log(motive);
-// {
-//   reducer,               Reducer function, to be used in a Redux store
-//   todo,                  An Action Creator generated from todo in ReduxMotive
-//   syncTodo               An Action Creator generated from syncTodo in ReduxMotive
-// }
-```
-
 #### Action Types
 
-Action types are attached as properties to generated Action Creators.
-
-<details>
-<summary>Example</summary>
-  <p>
+Action types for each Action Creators are available as properties, which is useful when attempting to match the types in a explicit way.
 
 ```js
 console.log(motive.todo.ACTION_TYPE)
 // @@MOTIVE/<PREFIX>/TODO_SYNC
 
-console.log(motive.syncTodo.ACTION_TYPE_START)
+console.log(motive.fetchTodo.ACTION_TYPE_START)
 // @@MOTIVE/<PREFIX>/SYNC_TODO_START
-console.log(motive.syncTodo.ACTION_TYPE_END)
+console.log(motive.fetchTodo.ACTION_TYPE_END)
 // @@MOTIVE/<PREFIX>/SYNC_TODO_END
-console.log(motive.syncTodo.ACTION_TYPE_ERROR)
+console.log(motive.fetchTodo.ACTION_TYPE_ERROR)
 // @@MOTIVE/<PREFIX>/SYNC_TODO_ERROR
 ```
 
-  </p>
-</details>
+> _You don't need to use these if you're dispatching the generated Action Creators._
 
 ## Alternatives & inspirations
 
@@ -313,7 +297,7 @@ _Library_                              | _Description_
 
 ## License
 
-Licensed under the MIT License, Copyright © 2017 Lochlan Bunn.
+Licensed under the MIT License, Copyright © 2017-present Lochlan Bunn.
 
 [redux-thunk]: https://github.com/gaearon/redux-thunk
 [freactal]: https://github.com/FormidableLabs/freactal
