@@ -8,59 +8,112 @@ Object {
 
 exports[`ReduxMotive constructor should construct a motive 2`] = `[Function]`;
 
-exports[`ReduxMotive intents should be ok if an expanded async motive only defines "effect" prop 1`] = `Object {}`;
-
-exports[`ReduxMotive intents should be ok when async motive returns nothing 1`] = `Object {}`;
-
-exports[`ReduxMotive intents should dispatch an bound motive action creator in an async motive 1`] = `Object {}`;
-
-exports[`ReduxMotive intents should have a bound motive in async motive 1`] = `Object {}`;
-
-exports[`ReduxMotive intents should work with single async motive 1`] = `Object {}`;
-
-exports[`ReduxMotive intents should work with single async motive 2`] = `
+exports[`ReduxMotive motives should be ok if an expanded async motive only defines "effect" prop 1`] = `
 Object {
-  "progressing": true,
-}
-`;
-
-exports[`ReduxMotive intents should work with single async motive 3`] = `
-Object {
+  "error": null,
   "progressing": false,
 }
 `;
 
-exports[`ReduxMotive intents should work with single async motive that throws 1`] = `Object {}`;
-
-exports[`ReduxMotive intents should work with single async motive that throws 2`] = `
+exports[`ReduxMotive motives should be ok when async motive returns nothing 1`] = `
 Object {
+  "error": null,
+  "progressing": false,
+}
+`;
+
+exports[`ReduxMotive motives should dispatch an bound motive action creator in an async motive 1`] = `
+Object {
+  "error": null,
+  "progressing": false,
+}
+`;
+
+exports[`ReduxMotive motives should have a bound motive in async motive 1`] = `
+Object {
+  "error": null,
+  "progressing": false,
+}
+`;
+
+exports[`ReduxMotive motives should work with single async motive 1`] = `
+Object {
+  "error": null,
+  "progressing": false,
+}
+`;
+
+exports[`ReduxMotive motives should work with single async motive 2`] = `
+Object {
+  "error": null,
   "progressing": true,
 }
 `;
 
-exports[`ReduxMotive intents should work with single async motive that throws 3`] = `
+exports[`ReduxMotive motives should work with single async motive 3`] = `
+Object {
+  "error": null,
+  "progressing": false,
+}
+`;
+
+exports[`ReduxMotive motives should work with single async motive that throws 1`] = `
+Object {
+  "error": null,
+  "progressing": false,
+}
+`;
+
+exports[`ReduxMotive motives should work with single async motive that throws 2`] = `
+Object {
+  "error": null,
+  "progressing": true,
+}
+`;
+
+exports[`ReduxMotive motives should work with single async motive that throws 3`] = `
 Object {
   "error": [Error: foo],
   "progressing": false,
 }
 `;
 
-exports[`ReduxMotive intents should work with single async motive with configured handlers 1`] = `Object {}`;
-
-exports[`ReduxMotive intents should work with single async motive with configured handlers 2`] = `
+exports[`ReduxMotive motives should work with single async motive with configured handlers 1`] = `
 Object {
+  "error": null,
+  "progressing": false,
+}
+`;
+
+exports[`ReduxMotive motives should work with single async motive with configured handlers 2`] = `
+Object {
+  "error": null,
   "isSubmerged": true,
+  "progressing": false,
 }
 `;
 
-exports[`ReduxMotive intents should work with single async motive with configured handlers 3`] = `
+exports[`ReduxMotive motives should work with single async motive with configured handlers 3`] = `
 Object {
+  "error": null,
   "isSubmerged": false,
+  "progressing": false,
 }
 `;
 
-exports[`ReduxMotive intents should work with single sync intent 1`] = `
+exports[`ReduxMotive motives should work with single sync motive 1`] = `
 Object {
+  "error": null,
+  "progressing": false,
   "rainDepth": 10,
 }
 `;
+
+exports[`ReduxMotive reducer should construct initial state 1`] = `
+Object {
+  "error": null,
+  "progressing": false,
+}
+`;
+
+exports[`ReduxMotive reducer should not construct initial state with configured handlers 1`] = `undefined`;

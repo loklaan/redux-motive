@@ -21,8 +21,35 @@ describe('ReduxMotive', () => {
     })
   })
 
-  describe('intents', () => {
-    it('should work with single sync intent', () => {
+  describe('reducer', () => {
+    it('should construct initial state', () => {
+      const motive = new ReduxMotive({
+        config: {},
+        sync: { foo () {} }
+      })
+
+      const store = createStore(motive.reducer, applyMiddleware(thunk))
+      expect(store.getState()).toMatchSnapshot()
+    })
+    it('should not construct initial state with configured handlers', () => {
+      const motive = new ReduxMotive({
+        config: {
+          handlers: {
+            start () {},
+            end () {},
+            error () {}
+          }
+        },
+        sync: { foo () {} }
+      })
+
+      const store = createStore(motive.reducer, applyMiddleware(thunk))
+      expect(store.getState()).toMatchSnapshot()
+    })
+  })
+
+  describe('motives', () => {
+    it('should work with single sync motive', () => {
       const motive = new ReduxMotive({
         config: {
           prefix: 'test',

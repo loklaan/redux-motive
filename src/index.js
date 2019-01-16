@@ -1,4 +1,5 @@
 const PROGRESS_STATE_PROP = 'progressing'
+const ERROR_STATE_PROP = 'error'
 const MOTIVE_PREFIX = '@@MOTIVE'
 const FUNCOBJ_EFFECT_KEY = 'effect'
 const META_MOTIVE_ASYNC = '@@motiveasync'
@@ -8,11 +9,24 @@ const HANDLER_SUFFIXES = {
   END: 'END',
   ERROR: 'ERROR'
 }
+const DEFAULT_STATES = {
+  PROGRESSING: {
+    [PROGRESS_STATE_PROP]: true,
+    [ERROR_STATE_PROP]: null
+  },
+  INITIAL: {
+    [PROGRESS_STATE_PROP]: false,
+    [ERROR_STATE_PROP]: null
+  }
+}
 const DEFAULT_HANDLERS = {
-  start: state => Object.assign({}, state, { [PROGRESS_STATE_PROP]: true }),
-  end: state => Object.assign({}, state, { [PROGRESS_STATE_PROP]: false }),
+  start: state => Object.assign({}, state, DEFAULT_STATES.PROGRESSING),
+  end: state => Object.assign({}, state, DEFAULT_STATES.INITIAL),
   error: (state, error) =>
-    Object.assign({}, state, { [PROGRESS_STATE_PROP]: false, error })
+    Object.assign({}, state, {
+      [PROGRESS_STATE_PROP]: false,
+      [ERROR_STATE_PROP]: error
+    })
 }
 
 /**
@@ -131,7 +145,11 @@ function ReduxMotive (configuration) {
       extractActionCreatorsAndReducerFromAsyncMotive
     )
 
-  function motiveReducer (state = config.initialState, action) {
+  const initialState =
+    defaultHandlers === DEFAULT_HANDLERS
+      ? Object.assign({}, DEFAULT_STATES.INITIAL, config.initialState)
+      : config.initialState
+  function motiveReducer (state = initialState, action) {
     return reducersMap[action.type]
       ? reducersMap[action.type](state, action)
       : state
