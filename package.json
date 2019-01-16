@@ -1,6 +1,6 @@
 {
   "name": "redux-motive",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Simplify writing action creators, reducers and effects - without breaking redux.",
   "keywords": [
     "redux",
