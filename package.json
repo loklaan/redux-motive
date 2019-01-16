@@ -27,11 +27,10 @@
     "test:watch": "jest --watchAll",
     "lint:staged": "lint-staged"
   },
-  "dependencies": {
-    "@babel/plugin-transform-runtime": "^7.2.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@babel/core": "^7.2.2",
+    "@babel/plugin-transform-runtime": "^7.2.0",
     "@babel/preset-env": "^7.2.3",
     "@babel/runtime": "^7.2.0",
     "babel-core": "^7.0.0-bridge.0",
