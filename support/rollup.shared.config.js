@@ -13,7 +13,7 @@ export const commonPlugins = [
   }),
   commonjs(),
   babel({
-    babelHelpers: 'external',
+    babelHelpers: 'runtime',
     exclude: 'node_modules/**'
   }),
   cleanup({ sourceType: 'module', maxEmptyLines: 0 })

@@ -10,10 +10,10 @@ const CONFIGS = {
     ]
   },
   build: {
-    plugins: ['@babel/plugin-external-helpers'],
+    plugins: ['@babel/plugin-transform-runtime'],
     presets: [
       ['@babel/preset-env', {
-        modules: false,
+        modules: 'auto',
         targets: [
           'last 2 versions'
         ]
